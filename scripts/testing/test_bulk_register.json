@@ -1,0 +1,16 @@
+{
+  "userId": 6265,
+  "userAddress": "0xAFff1831e663B6F29fb90871Ea8518e8f8B3b71a",
+  "positions": [{
+    "nftTokenId": "3534947",
+    "poolAddress": "0x82Da478b1382B951cBaD01Beb9eD459cDB16458E",
+    "token0Address": "0x4200000000000000000000000000000000000006", 
+    "token1Address": "0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8",
+    "amount0": "338464983805808009",
+    "amount1": "74507142618165089924679",
+    "liquidity": "158801948412713990732",
+    "currentValueUSD": 2489.26,
+    "feeTier": 3000,
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }]
+}

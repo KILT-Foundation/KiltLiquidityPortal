@@ -1,0 +1,15 @@
+{
+  "address": "0x0000000000000000000000000000000000000000",
+  "abi": [
+    "function depositToTreasury(uint256 amount) external",
+    "function distributeReward(address user, uint256 amount) external",
+    "function claimRewards() external",
+    "function getClaimableRewards(address user) external view returns (uint256)",
+    "function getUserRewards(address user) external view returns (tuple(uint256 amount, uint256 lockTimestamp, bool claimed)[])",
+    "function totalTreasuryBalance() external view returns (uint256)",
+    "function getContractBalance() external view returns (uint256)",
+    "event RewardDistributed(address indexed user, uint256 amount, uint256 lockTimestamp)",
+    "event RewardClaimed(address indexed user, uint256 amount)",
+    "event TreasuryDeposit(uint256 amount)"
+  ]
+}

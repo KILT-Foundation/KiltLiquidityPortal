@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Local Development
+  postgres:
+    image: postgres:15
+    restart: always
+    container_name: kilt-postgres-local
+    environment:
+      POSTGRES_DB: kilt_liquidity_portal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - kilt-network
+
+  # Redis for Caching (Optional)
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: kilt-redis-local
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kilt-network
+
+  # PgAdmin for Database Management (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    container_name: kilt-pgadmin-local
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@kilt.local
+      PGADMIN_DEFAULT_PASSWORD: password
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - kilt-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  kilt-network:
+    driver: bridge

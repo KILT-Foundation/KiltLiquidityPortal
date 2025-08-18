@@ -1,0 +1,115 @@
+{
+  "alerts": [
+    {
+      "name": "High Memory Usage",
+      "condition": "memory_usage > 85%",
+      "severity": "warning",
+      "action": "notification",
+      "threshold": 85,
+      "description": "Memory usage is above 85%"
+    },
+    {
+      "name": "High CPU Usage", 
+      "condition": "cpu_usage > 80%",
+      "severity": "warning",
+      "action": "notification",
+      "threshold": 80,
+      "description": "CPU usage is above 80%"
+    },
+    {
+      "name": "Disk Space Low",
+      "condition": "disk_usage > 90%",
+      "severity": "critical",
+      "action": "immediate_notification",
+      "threshold": 90,
+      "description": "Disk usage is above 90%"
+    },
+    {
+      "name": "Application Down",
+      "condition": "health_check_fails > 3",
+      "severity": "critical",
+      "action": "immediate_notification",
+      "threshold": 3,
+      "description": "Health check has failed more than 3 times"
+    },
+    {
+      "name": "Database Connection Failed",
+      "condition": "database_status != 'connected'",
+      "severity": "critical", 
+      "action": "immediate_notification",
+      "threshold": 1,
+      "description": "Database connection is not healthy"
+    },
+    {
+      "name": "High Error Rate",
+      "condition": "error_rate > 5%",
+      "severity": "warning",
+      "action": "notification",
+      "threshold": 5,
+      "description": "Application error rate is above 5%"
+    },
+    {
+      "name": "Slow Response Time",
+      "condition": "avg_response_time > 10s",
+      "severity": "warning",
+      "action": "notification", 
+      "threshold": 10000,
+      "description": "Average response time is above 10 seconds"
+    },
+    {
+      "name": "Low Active Positions",
+      "condition": "active_positions < 5",
+      "severity": "info",
+      "action": "log",
+      "threshold": 5,
+      "description": "Number of active positions is below expected threshold"
+    },
+    {
+      "name": "Treasury Balance Low",
+      "condition": "treasury_balance < 10000",
+      "severity": "warning",
+      "action": "notification",
+      "threshold": 10000,
+      "description": "Treasury balance is running low"
+    },
+    {
+      "name": "High Claim Volume",
+      "condition": "claims_per_hour > 50",
+      "severity": "info",
+      "action": "log",
+      "threshold": 50,
+      "description": "High volume of claims being processed"
+    }
+  ],
+  "notification_channels": [
+    {
+      "name": "email",
+      "type": "email",
+      "config": {
+        "recipients": ["admin@kilt.io", "ops@kilt.io"],
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587
+      }
+    },
+    {
+      "name": "slack",
+      "type": "webhook",
+      "config": {
+        "webhook_url": "https://hooks.slack.com/services/your/webhook/url",
+        "channel": "#kilt-alerts"
+      }
+    },
+    {
+      "name": "pagerduty",
+      "type": "pagerduty",
+      "config": {
+        "integration_key": "your-pagerduty-integration-key",
+        "severity_mapping": {
+          "critical": "critical",
+          "warning": "warning", 
+          "info": "info"
+        }
+      }
+    }
+  ]
+}

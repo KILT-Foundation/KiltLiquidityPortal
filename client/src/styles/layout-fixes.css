@@ -1,0 +1,296 @@
+/* Layout and Alignment Fixes - Comprehensive CSS corrections */
+
+/* Prevent layout shifts and ensure proper text truncation */
+.truncate-safe {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Flex container improvements */
+.flex-safe {
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.flex-between-safe {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.flex-center-safe {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+/* Grid improvements */
+.grid-safe {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+}
+
+.grid-cols-responsive {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Card content alignment fixes */
+.card-content-safe {
+  padding: 1.5rem;
+  min-width: 0;
+}
+
+.card-content-safe > * {
+  min-width: 0;
+}
+
+/* Text content improvements */
+.text-content-safe {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.number-display-safe {
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  text-align: right;
+}
+
+/* Button alignment fixes */
+.button-group-safe {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.button-group-safe > * {
+  flex-shrink: 0;
+}
+
+/* Position card specific fixes */
+.position-card-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem;
+}
+
+.position-card-layout > * {
+  min-width: 0;
+}
+
+.position-value-container {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.position-actions-container {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Dashboard grid improvements */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Tab content layout */
+.tab-content-safe {
+  min-width: 0;
+  width: 100%;
+}
+
+.tab-content-safe > * {
+  min-width: 0;
+}
+
+/* Responsive text sizing */
+@media (max-width: 640px) {
+  .text-responsive-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .text-responsive-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  .text-responsive-number {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+/* Fix overflow issues in containers */
+.container-safe {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Badge and label improvements */
+.badge-safe {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Form input improvements */
+.input-safe {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Modal and dialog improvements */
+.dialog-content-safe {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 100%;
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .dialog-content-safe {
+    max-width: 500px;
+  }
+}
+
+/* Table-like layouts */
+.table-row-safe {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 0;
+}
+
+.table-cell-safe {
+  min-width: 0;
+  flex: 1;
+}
+
+.table-cell-fixed {
+  flex-shrink: 0;
+}
+
+/* Animation-safe classes */
+.transition-safe {
+  transition: all 0.2s ease-in-out;
+  will-change: auto;
+}
+
+/* Focus and hover improvements */
+.interactive-safe:focus-visible {
+  outline: 2px solid #ff0066;
+  outline-offset: 2px;
+}
+
+.interactive-safe:hover {
+  transform: translateY(-1px);
+}
+
+/* Loading state improvements */
+.loading-safe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  gap: 0.5rem;
+}
+
+/* Error state improvements */
+.error-safe {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  word-wrap: break-word;
+}
+
+/* Success state improvements */
+.success-safe {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+  word-wrap: break-word;
+}
+
+/* Utility classes for common layout issues */
+.full-width-safe {
+  width: 100%;
+  min-width: 0;
+}
+
+.max-width-safe {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.height-safe {
+  min-height: 0;
+  height: auto;
+}
+
+.overflow-safe {
+  overflow: hidden;
+}
+
+.scroll-safe {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 0, 102, 0.3) rgba(0, 0, 0, 0.1);
+}
+
+.scroll-safe::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-safe::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.scroll-safe::-webkit-scrollbar-thumb {
+  background: rgba(255, 0, 102, 0.3);
+  border-radius: 3px;
+}
+
+.scroll-safe::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 0, 102, 0.5);
+}

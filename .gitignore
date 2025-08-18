@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Production builds
+dist
+build
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Development artifacts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Development images and temporary files
+attached_assets/image_*.png
+attached_assets/Pasted-*.txt
+attached_assets/*.mp4
+attached_assets/*.xlsx
+
+# Testing artifacts
+test-*.html
+manual-claim-*.html
+
+# Database
+drizzle/
+*.db
+*.sqlite
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db

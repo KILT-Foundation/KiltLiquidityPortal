@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kilt-liquidity.replit.app/sitemap.xml
