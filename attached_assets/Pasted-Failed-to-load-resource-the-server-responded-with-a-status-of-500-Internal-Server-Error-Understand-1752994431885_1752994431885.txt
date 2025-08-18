@@ -1,0 +1,15 @@
+Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/maximum-apr:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/maximum-apr:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/maximum-apr:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/program-analytics:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/program-analytics:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/maximum-apr:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/user-apr/0x5bf25dc1baf6a96c5a0f724e05ecf4d456c7652e:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/rewards/maximum-apr:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+Console.js:61 Connected address: 0x5bf25dc1baf6a96c5a0f724e05ecf4d456c7652e
+Console.js:61 Authorized wallets: Array(2)
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/admin/treasury/config:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/admin/treasury/config:1  Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+Console.js:61 Sending treasury config: Object
+667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/admin/treasury/config:1  Failed to load resource: the server responded with a status of 400 (Bad Request)

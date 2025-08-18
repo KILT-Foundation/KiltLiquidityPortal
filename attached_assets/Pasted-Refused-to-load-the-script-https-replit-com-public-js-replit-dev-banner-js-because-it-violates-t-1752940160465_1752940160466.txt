@@ -1,0 +1,46 @@
+Refused to load the script 'https://replit.com/public/js/replit-dev-banner.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval'". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+Understand this error
+chunk-RPCDYKBN.js?v=83445315:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+admin-panel-fixed.tsx:83  GET https://667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/admin/dashboard 401 (Unauthorized)
+queryFn @ admin-panel-fixed.tsx:83
+fetchFn @ @tanstack_react-query.js?v=83445315:840
+run @ @tanstack_react-query.js?v=83445315:494
+start @ @tanstack_react-query.js?v=83445315:536
+fetch @ @tanstack_react-query.js?v=83445315:926
+executeFetch_fn @ @tanstack_react-query.js?v=83445315:2211
+setOptions @ @tanstack_react-query.js?v=83445315:1955
+(anonymous) @ @tanstack_react-query.js?v=83445315:3032
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=83445315:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=83445315:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=83445315:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=83445315:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=83445315:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=83445315:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=83445315:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=83445315:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=83445315:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=83445315:19432
+commitRoot @ chunk-RPCDYKBN.js?v=83445315:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=83445315:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=83445315:18718
+workLoop @ chunk-RPCDYKBN.js?v=83445315:197
+flushWork @ chunk-RPCDYKBN.js?v=83445315:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=83445315:384Understand this error
+contentScript.js:1 Uncaught (in promise) Error: TypeError: Cannot read properties of undefined (reading 'setIcon')
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1352750
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1311516
+    at t (chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1311585)
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:361962
+g @ contentScript.js:1
+emitInput @ contentScript.js:1
+await in emitInput
+get @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+await in (anonymous)
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1Understand this error
+contentScript.js:1 Uncaught (in promise) Error: Failed to set icon 'icon/dark/16.png': Failed to fetch
+    at extensions::setIcon:131:17
+    at extensions::setIcon:38:5

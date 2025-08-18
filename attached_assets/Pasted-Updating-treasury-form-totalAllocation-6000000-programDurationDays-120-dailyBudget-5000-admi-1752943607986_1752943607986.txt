@@ -1,0 +1,68 @@
+Updating treasury form: {totalAllocation: 6000000, programDurationDays: 120, dailyBudget: 5000}
+admin-panel-working.tsx:394 Program duration changed to: 12
+admin-panel-working.tsx:58 Updating treasury form: {totalAllocation: 6000000, programDurationDays: 12, dailyBudget: 5000}
+admin-panel-working.tsx:394 Program duration changed to: 1
+admin-panel-working.tsx:58 Updating treasury form: {totalAllocation: 6000000, programDurationDays: 1, dailyBudget: 5000}
+admin-panel-working.tsx:394 Program duration changed to: 0
+admin-panel-working.tsx:58 Updating treasury form: {totalAllocation: 6000000, programDurationDays: 0, dailyBudget: 5000}
+admin-panel-working.tsx:394 Program duration changed to: 2
+admin-panel-working.tsx:58 Updating treasury form: {totalAllocation: 6000000, programDurationDays: 2, dailyBudget: 5000}
+admin-panel-working.tsx:394 Program duration changed to: 25
+admin-panel-working.tsx:58 Updating treasury form: {totalAllocation: 6000000, programDurationDays: 25, dailyBudget: 5000}
+admin-panel-working.tsx:402 === TREASURY UPDATE CLICKED ===
+admin-panel-working.tsx:403 Current treasury form state: {totalAllocation: 6000000, programDurationDays: 25, dailyBudget: 5000}
+admin-panel-working.tsx:404 Total Allocation: 6000000
+admin-panel-working.tsx:405 Program Duration: 25
+admin-panel-working.tsx:406 ============================
+admin-panel-working.tsx:415 Sending form data: {totalAllocation: 6000000, programDurationDays: 25, dailyBudget: 5000}
+admin-panel-working.tsx:106 Sending treasury data to API: {totalAllocation: 6000000, programDurationDays: 25, dailyBudget: 5000}
+admin-panel-working.tsx:113 Request body: {programBudget: 6000000, programDurationDays: 25, treasuryWalletAddress: '0x0000000000000000000000000000000000000000', isActive: true}
+admin-panel-working.tsx:115  POST https://667115b0-2c5d-4947-a0bd-092aba078ef0-00-2e34c7glc7qbd.spock.replit.dev/api/admin/treasury/config 400 (Bad Request)
+mutationFn @ admin-panel-working.tsx:115
+fn @ @tanstack_react-query.js?v=210f4c56:1189
+run @ @tanstack_react-query.js?v=210f4c56:494
+start @ @tanstack_react-query.js?v=210f4c56:536
+execute @ @tanstack_react-query.js?v=210f4c56:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=210f4c56:2630
+(anonymous) @ @tanstack_react-query.js?v=210f4c56:3295
+onClick @ admin-panel-working.tsx:416
+callCallback2 @ chunk-RPCDYKBN.js?v=210f4c56:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=210f4c56:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=210f4c56:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=210f4c56:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=210f4c56:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=210f4c56:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=210f4c56:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=210f4c56:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=210f4c56:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=210f4c56:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=210f4c56:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=210f4c56:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=210f4c56:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=210f4c56:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=210f4c56:5449Understand this error
+admin-panel-working.tsx:132 Treasury update error: Error: Failed to update treasury: {"error":"Program budget and program duration required"}
+    at Object.mutationFn (admin-panel-working.tsx:123:15)
+onError @ admin-panel-working.tsx:132
+execute @ @tanstack_react-query.js?v=210f4c56:1254
+await in execute
+mutate @ @tanstack_react-query.js?v=210f4c56:2630
+(anonymous) @ @tanstack_react-query.js?v=210f4c56:3295
+onClick @ admin-panel-working.tsx:416
+callCallback2 @ chunk-RPCDYKBN.js?v=210f4c56:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=210f4c56:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=210f4c56:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=210f4c56:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=210f4c56:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=210f4c56:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=210f4c56:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=210f4c56:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=210f4c56:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=210f4c56:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=210f4c56:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=210f4c56:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=210f4c56:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=210f4c56:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=210f4c56:5449Understand this error
+content.js:1 Disconnected from polkadot{.js}-0x6e10e163a1550e8d-content

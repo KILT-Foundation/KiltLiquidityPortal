@@ -1,0 +1,39 @@
+admin:1 Refused to load the script 'https://replit.com/public/js/replit-dev-banner.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval'". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+Understand this error
+chunk-RPCDYKBN.js?v=210f4c56:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+admin-panel-fixed.tsx:83 Dashboard query - bypassing auth for testing
+contentScript.js:1 Uncaught (in promise) Error: TypeError: Cannot read properties of undefined (reading 'setIcon')
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1352750
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1311516
+    at t (chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:1311585)
+    at chrome-extension://bflldjbbpcjgooclhpmhdhioebmnnkcm/js/backgroundScript.js:2:361962
+g @ contentScript.js:1
+emitInput @ contentScript.js:1
+await in emitInput
+get @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+await in (anonymous)
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1Understand this error
+contentScript.js:1 Uncaught (in promise) Error: Failed to set icon 'icon/dark/16.png': Failed to fetch
+    at extensions::setIcon:131:17
+    at extensions::setIcon:38:5
+m @ contentScript.js:1
+emitInput @ contentScript.js:1
+await in emitInput
+get @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+await in (anonymous)
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1
+(anonymous) @ contentScript.js:1Understand this error
+admin-panel-fixed.tsx:93 Dashboard response status: 200
+admin-panel-fixed.tsx:83 Dashboard query - bypassing auth for testing
+admin-panel-fixed.tsx:93 Dashboard response status: 200
+admin-panel-fixed.tsx:83 Dashboard query - bypassing auth for testing
+admin-panel-fixed.tsx:93 Dashboard response status: 200
+admin-panel-fixed.tsx:83 Dashboard query - bypassing auth for testing
+admin-panel-fixed.tsx:93 Dashboard response status: 200
