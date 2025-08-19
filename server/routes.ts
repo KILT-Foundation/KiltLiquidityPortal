@@ -63,6 +63,22 @@ import { blockchainSyncValidator } from "./blockchain-sync-validator";
 // Removed systemHealthRouter - consolidated into main routes
 // Removed uniswapPositionsRouter - consolidated into main routes
 
+// Add global type declaration at the top of the file
+declare global {
+  var rewardStatsCache: Map<string, {
+    data: {
+      totalAccumulated: number;
+      totalClaimable: number;
+    };
+    timestamp: number;
+  }>;
+}
+
+// Initialize global cache if it doesn't exist
+if (!global.rewardStatsCache) {
+  global.rewardStatsCache = new Map();
+}
+
 // Helper function to get smart contract address from database - Single Source of Truth
 async function getSmartContractAddress(): Promise<string> {
   try {
@@ -1860,8 +1876,8 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       try {
         // First try smart contract data for performance
         const userStats = await smartContractService.getUserStats(userAddress);
-        if (userStats.success && parseFloat(userStats.claimableAmount || "0") > 0) {
-          actualClaimable = parseFloat(userStats.claimableAmount || "0");
+        if (userStats.success && userStats.claimed && userStats.claimed > 0) {
+          actualClaimable = userStats.claimed;
           totalAccumulated = actualClaimable; // For display consistency
           console.log(`⚡ Fast claimability calculation: ${actualClaimable} KILT (smart contract)`);
         } else {
@@ -4803,7 +4819,7 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
   });
 
   // API health check endpoint
-  app.get("/api/health", (req: Request, res: Response) => {
+  app.get("/api/health", async (req, res) => {
     try {
       const health = {
         status: "healthy",

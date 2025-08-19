@@ -207,8 +207,8 @@ export class RewardDistributionService {
   }>> {
     try {
       // Import required database components
-      const { db } = await import('../db');
-      const { users, rewards } = await import('../../shared/schema');
+      const { db } = await import('./db');
+      const { users, rewards } = await import('../shared/schema');
       const { eq, isNull } = await import('drizzle-orm');
       
       // Query database for users with claimable rewards

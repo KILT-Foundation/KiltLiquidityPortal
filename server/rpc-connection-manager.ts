@@ -41,7 +41,8 @@ class RpcConnectionManager {
           retryCount: 0, // We handle retries manually
           batch: false // Disable batching to avoid complexity
         })
-      });
+      }) as any; 
+      
       this.clients.set(endpoint.url, client);
     });
   }

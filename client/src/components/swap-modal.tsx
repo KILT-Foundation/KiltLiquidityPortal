@@ -31,7 +31,10 @@ export const SwapModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const kiltBalance = 51544.325239;
 
   // Real-time swap quote calculation
-  const { data: swapQuote, isLoading: quoteLoading } = useQuery({
+  const { data: swapQuote, isLoading: quoteLoading } = useQuery<{
+    kiltAmount: string;
+    priceImpact: number;
+  }>({
     queryKey: ['/api/swap/quote', ethAmount],
     enabled: !!ethAmount && parseFloat(ethAmount) > 0,
     refetchInterval: 5000, // Update every 5 seconds

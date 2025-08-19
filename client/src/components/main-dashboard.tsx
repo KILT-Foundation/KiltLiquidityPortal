@@ -17,7 +17,8 @@ import {
   ArrowRight,
   ExternalLink,
   BarChart3,
-  TrendingUp as ChartIcon
+  TrendingUp as ChartIcon,
+  ShoppingCart // Add this import
 } from 'lucide-react';
 
 // Lazy-loaded components for faster initial load
@@ -79,6 +80,7 @@ import { CyberpunkKiltLogo } from './cyberpunk-kilt-logo';
 
 // Viem utilities for token amount parsing
 import { parseUnits } from 'viem';
+import { BuyKilt } from './buy-kilt';
 
 // Token contract addresses
 const WETH_TOKEN = '0x4200000000000000000000000000000000000006'; // Base WETH
@@ -88,7 +90,11 @@ const KILT_TOKEN = '0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8';
 
 // STREAMLINED APR Components using single API endpoint
 function StreamlinedAPRData() {
-  const { data: aprData, isLoading, error } = useQuery({
+  const { data: aprData, isLoading, error } = useQuery<{
+    programAPR: number;
+    tradingAPR: number;
+    totalAPR: number;
+  }>({
     queryKey: ['/api/apr/streamlined'],
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // 1 minute
@@ -1161,9 +1167,9 @@ export function MainDashboard() {
             {/* Buy KILT Component */}
             <div className="p-4">
               <BuyKilt 
-                kiltBalance={formatTokenAmount(kiltBalance || '0', 'KILT')}
-                ethBalance={formatTokenAmount(ethBalance || '0', 'ETH')}
-                wethBalance={formatTokenAmount(wethBalance || '0', 'WETH')}
+                kiltBalance={formatTokenAmount(kiltBalance || '0')}
+                ethBalance={formatTokenAmount(ethBalance || '0')}
+                wethBalance={formatTokenAmount(wethBalance || '0')}
                 formatTokenAmount={formatTokenAmount}
                 onPurchaseComplete={() => {
                   // Refresh token balances after purchase and close modal

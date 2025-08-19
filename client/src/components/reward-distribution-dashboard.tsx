@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Send, Users, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
+import { Coins, Send, Users, TrendingUp, AlertCircle, CheckCircle, ShoppingCart } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 interface EligibleUser {
@@ -38,7 +38,7 @@ export function RewardDistributionDashboard() {
   });
 
   // Distribution mutation
-  const distributeMutation = useMutation({
+  const distributeMutation = useMutation<DistributionResult, Error, EligibleUser[]>({
     mutationFn: async (recipients: EligibleUser[]) => {
       return await apiRequest('/api/reward-distribution/distribute', {
         method: 'POST',
@@ -53,7 +53,7 @@ export function RewardDistributionDashboard() {
   });
 
   // Daily distribution mutation
-  const dailyDistributionMutation = useMutation({
+  const dailyDistributionMutation = useMutation<DistributionResult, Error, void>({
     mutationFn: async () => {
       return await apiRequest('/api/reward-distribution/daily-distribution', {
         method: 'POST',
@@ -196,25 +196,25 @@ export function RewardDistributionDashboard() {
           <CardContent>
             {distributeMutation.data && (
               <div className="flex items-center gap-2 mb-2">
-                {(distributeMutation.data as any).success ? (
+                {distributeMutation.data.success ? (
                   <CheckCircle className="h-5 w-5 text-emerald-400" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-red-400" />
                 )}
-                <span className={(distributeMutation.data as any).success ? 'text-emerald-400' : 'text-red-400'}>
-                  {String((distributeMutation.data as any).message)}
+                <span className={distributeMutation.data.success ? 'text-emerald-400' : 'text-red-400'}>
+                  {String(distributeMutation.data.message)}
                 </span>
               </div>
             )}
             {dailyDistributionMutation.data && (
               <div className="flex items-center gap-2">
-                {(dailyDistributionMutation.data as any).success ? (
+                {dailyDistributionMutation.data.success ? (
                   <CheckCircle className="h-5 w-5 text-emerald-400" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-red-400" />
                 )}
-                <span className={(dailyDistributionMutation.data as any).success ? 'text-emerald-400' : 'text-red-400'}>
-                  {String((dailyDistributionMutation.data as any).message)}
+                <span className={dailyDistributionMutation.data.success ? 'text-emerald-400' : 'text-red-400'}>
+                  {String(dailyDistributionMutation.data.message)}
                 </span>
               </div>
             )}

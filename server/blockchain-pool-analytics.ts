@@ -74,9 +74,9 @@ class BlockchainPoolAnalyticsService {
 
   constructor() {
     this.client = createPublicClient({
+      transport: http(process.env.BASE_RPC_URL || 'https://mainnet.base.org'),
       chain: base,
-      transport: http(process.env.BASE_RPC_URL || 'https://mainnet.base.org')
-    });
+    }) as any; // Temporary fix - you should properly type this
   }
 
   /**

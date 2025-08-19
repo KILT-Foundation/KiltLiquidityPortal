@@ -16,7 +16,8 @@ import {
   ExternalLink,
   Loader2,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ShoppingCart
 } from 'lucide-react';
 import { useWagmiWallet } from '@/hooks/use-wagmi-wallet';
 import { useKiltTokenData } from '@/hooks/use-kilt-data';
@@ -47,6 +48,18 @@ interface UniswapStyleLiquidityModalProps {
   position?: any;
 }
 
+// Add proper typing for position fees
+interface PositionFees {
+  token0: string;
+  token1: string;
+  usdValue: number;
+}
+
+interface Position {
+  fees?: PositionFees;
+  [key: string]: any;
+}
+
 export function UniswapStyleLiquidityModal({ 
   isOpen, 
   onClose, 
@@ -62,7 +75,7 @@ export function UniswapStyleLiquidityModal({
   
   // Get real-time fees for the position when in collect mode
   const positionId = position?.tokenId || position?.nftTokenId || position?.id;
-  const { data: positionFees } = usePositionFees(mode === 'collect' ? positionId?.toString() : null);
+  const { data: positionFees } = usePositionFees(mode === 'collect' ? positionId?.toString() : null) as { data: PositionFees | undefined };
 
   // Form state
   const [ethAmount, setEthAmount] = useState('');
@@ -614,7 +627,7 @@ export function UniswapStyleLiquidityModal({
                   </div>
                   <span className="font-mono">
                     {positionFees?.token0 ? (parseFloat(positionFees.token0) / 1e18).toFixed(6) : 
-                     (position?.fees as any)?.token0 ? (parseFloat((position.fees as any).token0) / 1e18).toFixed(6) : '0.000000'}
+                     (position?.fees as PositionFees)?.token0 ? (parseFloat((position.fees as PositionFees).token0) / 1e18).toFixed(6) : '0.000000'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -624,13 +637,13 @@ export function UniswapStyleLiquidityModal({
                   </div>
                   <span className="font-mono">
                     {positionFees?.token1 ? (parseFloat(positionFees.token1) / 1e18).toLocaleString() : 
-                     (position?.fees as any)?.token1 ? (parseFloat((position.fees as any).token1) / 1e18).toLocaleString() : '0'}
+                     (position?.fees as PositionFees)?.token1 ? (parseFloat((position.fees as PositionFees).token1) / 1e18).toLocaleString() : '0'}
                   </span>
                 </div>
               </div>
               <div className="text-xs text-gray-400">
                 Total value: ~${positionFees?.usdValue ? positionFees.usdValue.toFixed(2) : 
-                              (position?.fees as any)?.usdValue ? (position.fees as any).usdValue.toFixed(2) : '0.00'}
+                              (position?.fees as PositionFees)?.usdValue ? (position.fees as PositionFees).usdValue.toFixed(2) : '0.00'}
               </div>
             </div>
           )}
