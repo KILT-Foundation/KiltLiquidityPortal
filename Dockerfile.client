@@ -1,0 +1,27 @@
+# Stage 1: Build the React frontend
+FROM node:20 AS build
+
+WORKDIR /app
+
+# Copy root package files and install deps (root holds package.json)
+COPY package*.json ./
+RUN npm install --no-audit --unsafe-perm
+
+# Copy entire project
+COPY . .
+
+# Build the frontend from the client folder
+WORKDIR /app/client
+RUN npm run build
+
+# Stage 2: Serve with Nginx
+FROM nginx:1.27-alpine
+
+# Copy build output from Stage 1 (Vite is configured to output to /app/dist/public)
+COPY --from=build /app/dist/public /usr/share/nginx/html
+
+# Do NOT copy the repo nginx.conf into /etc/nginx/conf.d/default.conf here - the upstream nginx service mounts the real config.
+# If you need a custom nginx config for the client image, mount or COPY it to /etc/nginx/nginx.conf instead.
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

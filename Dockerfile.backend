@@ -1,0 +1,41 @@
+# ---- Build stage ----
+FROM node:20.12.2-alpine3.19 AS builder
+
+WORKDIR /app
+
+# Install build tools + CA certificates
+RUN apk add --no-cache python3 make g++ ca-certificates \
+    && update-ca-certificates
+
+# Copy package files first (leverage caching)
+COPY package.json package-lock.json* ./
+
+# Use npm install instead of ci to avoid network ECONNRESET issues
+RUN npm install --no-audit --unsafe-perm
+
+# Copy the rest of the code
+COPY . .
+
+# Build TypeScript to dist/
+RUN npm run build
+
+# ---- Runtime stage ----
+FROM node:20.12.2-alpine3.19 AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Install CA certificates in runner
+RUN apk add --no-cache ca-certificates curl \
+    && update-ca-certificates
+
+# Copy built app + package files + node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/package-lock.json ./package-lock.json
+COPY --from=builder /app/node_modules ./node_modules
+
+EXPOSE 5000
+
+# Start server
+CMD ["node", "dist/index.js"]
