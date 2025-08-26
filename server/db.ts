@@ -1,15 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import "dotenv/config";
-
-// Configure WebSocket constructor properly
-try {
-  neonConfig.webSocketConstructor = ws;
-} catch (error: unknown) {
-  console.warn('WebSocket configuration warning:', error instanceof Error ? error.message : 'Unknown error');
-}
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -17,17 +9,23 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create pool with better error handling and connection settings
+// Create PostgreSQL connection pool for production RDS
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 10,
+  max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Handle pool errors gracefully
 pool.on('error', (err: unknown) => {
   console.error('Database pool error:', err instanceof Error ? err.message : 'Unknown error');
+});
+
+// Test connection on startup
+pool.on('connect', () => {
+  console.log('✅ Connected to PostgreSQL RDS in private VPC');
 });
 
 export const db = drizzle({ client: pool, schema });
