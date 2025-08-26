@@ -116,15 +116,6 @@ export class TransactionValidator {
     warnings: string[]
   ): Promise<void> {
     try {
-      // Development mode: Skip balance validation for testing
-      const isDevelopment = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
-      
-      if (isDevelopment) {
-        console.log('🔧 Development mode: Skipping token balance validation');
-        warnings.push('Development mode: Token balance validation skipped');
-        return;
-      }
-
       // Check token balances
       const token0Balance = await this.getTokenBalance(params.token0, params.userAddress);
       const token1Balance = await this.getTokenBalance(params.token1, params.userAddress);
@@ -135,24 +126,48 @@ export class TransactionValidator {
         token0Balance: formatUnits(token0Balance, 18),
         token1Balance: formatUnits(token1Balance, 18),
         amount0Desired: formatUnits(params.amount0Desired, 18),
-        amount1Desired: formatUnits(params.amount1Desired, 18)
+        amount1Desired: formatUnits(params.amount1Desired, 18),
+        isNativeETH: params.isNativeETH
       });
 
-      if (params.amount0Desired > token0Balance) {
-        errors.push(`Insufficient WETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(token0Balance, 18)}`);
+      // For native ETH, check ETH balance instead of WETH balance
+      if (params.isNativeETH && params.token0.toLowerCase() === '0x4200000000000000000000000000000000000006') {
+        // When using native ETH, we check ETH balance but the transaction will handle WETH conversion
+        const ethBalance = await publicClient.getBalance({ address: params.userAddress as `0x${string}` });
+        console.log('💰 Native ETH Balance Check:', {
+          ethBalance: formatUnits(ethBalance, 18),
+          amount0Desired: formatUnits(params.amount0Desired, 18)
+        });
+        
+        if (params.amount0Desired > ethBalance) {
+          errors.push(`Insufficient ETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(ethBalance, 18)}`);
+        }
+      } else {
+        // Regular WETH balance check
+        if (params.amount0Desired > token0Balance) {
+          errors.push(`Insufficient WETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(token0Balance, 18)}`);
+        }
       }
 
+      // KILT balance check
       if (params.amount1Desired > token1Balance) {
         errors.push(`Insufficient KILT balance. Required: ${formatUnits(params.amount1Desired, 18)}, Available: ${formatUnits(token1Balance, 18)}`);
       }
 
-      // Warn if using more than 90% of balance
-      if (params.amount0Desired > (token0Balance * 9n) / 10n) {
-        warnings.push('Using more than 90% of WETH balance');
-      }
+      // Warn if using more than 90% of balance (only for successful balance checks)
+      if (errors.length === 0) {
+        if (params.isNativeETH) {
+          const ethBalance = await publicClient.getBalance({ address: params.userAddress as `0x${string}` });
+          if (params.amount0Desired > (ethBalance * 9n) / 10n) {
+            warnings.push('Using more than 90% of ETH balance');
+          }
+        } else if (params.amount0Desired > (token0Balance * 9n) / 10n) {
+          warnings.push('Using more than 90% of WETH balance');
+        }
 
-      if (params.amount1Desired > (token1Balance * 9n) / 10n) {
-        warnings.push('Using more than 90% of KILT balance');
+        if (params.amount1Desired > (token1Balance * 9n) / 10n) {
+          warnings.push('Using more than 90% of KILT balance');
+        }
       }
 
     } catch (error) {
