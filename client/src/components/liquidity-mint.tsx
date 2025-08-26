@@ -404,6 +404,17 @@ export function LiquidityMint({
     }
   }, [kiltAmount, ethAmount, selectedStrategy, address]);
 
+  useEffect(() => {
+    if (validationResult) {
+      console.log('🔍 Validation Result:', {
+        isValid: validationResult.isValid,
+        errors: validationResult.errors,
+        warnings: validationResult.warnings,
+        suggestions: validationResult.suggestions
+      });
+    }
+  }, [validationResult]);
+
   const handleApproveTokens = async () => {
     if (!address) return;
     
@@ -1128,7 +1139,28 @@ export function LiquidityMint({
           )}
         </Button>
       </div>
-      {/* Transaction validation alerts removed per user request */}
+      
+      {/* Development Mode: Show Validation Errors */}
+      {validationResult && !validationResult.isValid && (
+        <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="h-4 w-4 text-red-400" />
+            <span className="text-red-300 font-semibold text-sm">Validation Issues</span>
+          </div>
+          {validationResult.errors.map((error: string, index: number) => (
+            <div key={index} className="text-red-300 text-xs mb-1">• {error}</div>
+          ))}
+          {validationResult.warnings.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-red-500/20">
+              <span className="text-yellow-300 font-semibold text-xs">Warnings:</span>
+              {validationResult.warnings.map((warning: string, index: number) => (
+                <div key={index} className="text-yellow-300 text-xs">• {warning}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* MetaMask Information */}
       <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
         <div className="flex items-center gap-2">
