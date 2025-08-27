@@ -424,7 +424,7 @@ export function LiquidityMint({
       setIsKiltApproved(true);
       
       // Always approve WETH (needed for both ETH and WETH)
-      await approveToken(TOKENS.WETH as `0x${string}`);
+      await approveToken(TOKENS.WETH as `0x${string}`, parseUnits(ethAmount, 18));
       setIsEthApproved(true);
       
       // Mark tokens as approved

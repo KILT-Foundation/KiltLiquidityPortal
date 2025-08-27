@@ -4,6 +4,7 @@ import { useToast } from './use-toast';
 import { createPublicClient, createWalletClient, custom, http, formatUnits, parseUnits, maxUint256, encodeFunctionData } from 'viem';
 import { base } from 'viem/chains';
 import { useQuery } from '@tanstack/react-query';
+import { useWalletClient } from 'wagmi';
 
 // Extend window interface for ethereum provider
 declare global {
@@ -187,13 +188,8 @@ function useBlockchainConfig() {
 export function useUniswapV3() {
   const { address, isConnected } = useWagmiWallet();
   const { toast } = useToast();
+  const { data: walletClient } = useWalletClient();
 
-  // Create wallet client for transactions
-  const walletClient = address ? createWalletClient({
-    chain: base,
-    transport: custom((window as any).ethereum),
-    account: address
-  }) : null;
   
   // Get blockchain configuration from admin panel - MUST be called unconditionally
   const { data: blockchainConfig, isLoading: isConfigLoading } = useBlockchainConfig();
