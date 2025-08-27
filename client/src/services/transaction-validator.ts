@@ -120,25 +120,59 @@ export class TransactionValidator {
       const token0Balance = await this.getTokenBalance(params.token0, params.userAddress);
       const token1Balance = await this.getTokenBalance(params.token1, params.userAddress);
 
-      if (params.amount0Desired > token0Balance) {
-        errors.push(`Insufficient token0 balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(token0Balance, 18)}`);
+      console.log('💰 Token Balance Check:', {
+        token0: params.token0,
+        token1: params.token1,
+        token0Balance: formatUnits(token0Balance, 18),
+        token1Balance: formatUnits(token1Balance, 18),
+        amount0Desired: formatUnits(params.amount0Desired, 18),
+        amount1Desired: formatUnits(params.amount1Desired, 18),
+        isNativeETH: params.isNativeETH
+      });
+
+      // For native ETH, check ETH balance instead of WETH balance
+      if (params.isNativeETH && params.token0.toLowerCase() === '0x4200000000000000000000000000000000000006') {
+        // When using native ETH, we check ETH balance but the transaction will handle WETH conversion
+        const ethBalance = await publicClient.getBalance({ address: params.userAddress as `0x${string}` });
+        console.log('💰 Native ETH Balance Check:', {
+          ethBalance: formatUnits(ethBalance, 18),
+          amount0Desired: formatUnits(params.amount0Desired, 18)
+        });
+        
+        if (params.amount0Desired > ethBalance) {
+          errors.push(`Insufficient ETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(ethBalance, 18)}`);
+        }
+      } else {
+        // Regular WETH balance check
+        if (params.amount0Desired > token0Balance) {
+          errors.push(`Insufficient WETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(token0Balance, 18)}`);
+        }
       }
 
+      // KILT balance check
       if (params.amount1Desired > token1Balance) {
-        errors.push(`Insufficient token1 balance. Required: ${formatUnits(params.amount1Desired, 18)}, Available: ${formatUnits(token1Balance, 18)}`);
+        errors.push(`Insufficient KILT balance. Required: ${formatUnits(params.amount1Desired, 18)}, Available: ${formatUnits(token1Balance, 18)}`);
       }
 
-      // Warn if using more than 90% of balance
-      if (params.amount0Desired > (token0Balance * 9n) / 10n) {
-        warnings.push('Using more than 90% of token0 balance');
-      }
+      // Warn if using more than 90% of balance (only for successful balance checks)
+      if (errors.length === 0) {
+        if (params.isNativeETH) {
+          const ethBalance = await publicClient.getBalance({ address: params.userAddress as `0x${string}` });
+          if (params.amount0Desired > (ethBalance * 9n) / 10n) {
+            warnings.push('Using more than 90% of ETH balance');
+          }
+        } else if (params.amount0Desired > (token0Balance * 9n) / 10n) {
+          warnings.push('Using more than 90% of WETH balance');
+        }
 
-      if (params.amount1Desired > (token1Balance * 9n) / 10n) {
-        warnings.push('Using more than 90% of token1 balance');
+        if (params.amount1Desired > (token1Balance * 9n) / 10n) {
+          warnings.push('Using more than 90% of KILT balance');
+        }
       }
 
     } catch (error) {
-      warnings.push('Could not verify token balances');
+      console.error('Balance validation error:', error);
+      warnings.push('Could not verify token balances - check network connection');
     }
   }
 
