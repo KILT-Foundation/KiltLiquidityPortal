@@ -45,7 +45,7 @@ import { MobileWalletConnect } from './mobile-wallet-connect';
 import { PositionRegistration } from './position-registration';
 import { LoadingScreen } from './loading-screen';
 
-
+import { useWalletClient } from 'wagmi';
 
 // Lazy load heavy components
 const LiquidityMint = lazy(() => import('./liquidity-mint').then(m => ({ default: m.LiquidityMint })));
@@ -79,8 +79,9 @@ import { TokenLogo, KiltLogo, EthLogo } from '@/components/ui/token-logo';
 import { CyberpunkKiltLogo } from './cyberpunk-kilt-logo';
 
 // Viem utilities for token amount parsing
-import { parseUnits } from 'viem';
+import { createWalletClient, custom, parseUnits } from 'viem';
 import { BuyKilt } from './buy-kilt';
+import { base } from 'viem/chains';
 
 // Token contract addresses
 const WETH_TOKEN = '0x4200000000000000000000000000000000000006'; // Base WETH
@@ -149,7 +150,7 @@ export function MainDashboard() {
   const { data: kiltData } = useKiltTokenData();
   const unifiedData = useUnifiedDashboard();
   const appSession = useAppSession();
-  
+  const { data: walletClient } = useWalletClient();
   // Uniswap V3 hooks for liquidity provision
   const { mintPosition, isMinting } = useUniswapV3();
   
@@ -296,7 +297,16 @@ export function MainDashboard() {
 
   // Quick Add Liquidity with actual token approval and position minting
   const handleQuickAddLiquidity = async () => {
-    if (!address || isMinting) return;
+    if (!address || isMinting || !walletClient) return;
+
+    try {
+      await walletClient.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x2105' }], // Base chain ID in hex
+      });
+    } catch (manualError) {
+      console.error('network switch failed:', manualError);
+    }
     
     try {
       console.log('🚀 Starting Quick Add Liquidity process...');

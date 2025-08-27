@@ -420,7 +420,7 @@ export function LiquidityMint({
     
     try {
       // Approve KILT first
-      await approveToken(TOKENS.KILT as `0x${string}`);
+      await approveToken(TOKENS.KILT as `0x${string}`, parseUnits(kiltAmount, 18));
       setIsKiltApproved(true);
       
       // Always approve WETH (needed for both ETH and WETH)

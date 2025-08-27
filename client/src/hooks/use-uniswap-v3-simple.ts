@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useWagmiWallet } from './use-wagmi-wallet';
 import { useToast } from './use-toast';
-import { createWalletClient, custom, parseUnits, maxUint256 } from 'viem';
+import { parseUnits, maxUint256 } from 'viem';
 import { base } from 'viem/chains';
+import { useWalletClient } from 'wagmi';
 
 // Uniswap V3 Position Manager on Base
 const POSITION_MANAGER_ADDRESS = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1';
@@ -60,14 +61,20 @@ export function useSimpleUniswapV3() {
   const { toast } = useToast();
   const [isMinting, setIsMinting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
-
-  const walletClient = address ? createWalletClient({
-    chain: base,
-    transport: custom(window.ethereum)
-  }) : null;
+  
+  const { data: walletClient } = useWalletClient();
 
   const approveToken = async (tokenAddress: string, amount?: bigint) => {
     if (!walletClient || !address) throw new Error('Wallet not connected');
+
+    try {
+      await walletClient.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x2105' }], // Base chain ID in hex
+      });
+    } catch (manualError) {
+      console.error('network switch failed:', manualError);
+    }
     
     setIsApproving(true);
     try {
