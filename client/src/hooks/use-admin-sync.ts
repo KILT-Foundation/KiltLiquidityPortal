@@ -34,7 +34,6 @@ export function useAdminSync() {
             
             // If there's a new admin operation since last check
             if (operationTime > lastUpdateRef.current) {
-              console.log('🚀 Admin change detected - triggering blazing fast cache refresh');
               
               // Invalidate all admin-dependent queries for instant updates
               queryClient.invalidateQueries({ queryKey: ['maxAPR'] });

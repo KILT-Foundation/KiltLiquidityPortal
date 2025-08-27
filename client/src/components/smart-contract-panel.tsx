@@ -26,191 +26,19 @@ import {
   TrendingUp,
   Activity
 } from "lucide-react";
+
+// Import centralized contract constants
+import { 
+  TOKEN_ADDRESSES, 
+  ERC20_ABI, 
+  DYNAMIC_TREASURY_POOL_ABI, 
+  AUTHORIZED_ADMINS 
+} from "@/lib/contracts";
+
 // Simplified implementation focused on admin interface guidance
 
 // Contract configuration fetched from database
-const KILT_TOKEN_ADDRESS = "0x5d0dd05bb095fdd6af4865a1adf97c39c85ad2d8";
-
-// ERC20 ABI for KILT token interactions
-const ERC20_ABI = [
-  {
-    "inputs": [
-      {"internalType": "address", "name": "spender", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "approve",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "to", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "transfer",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "owner", "type": "address"},
-      {"internalType": "address", "name": "spender", "type": "address"}
-    ],
-    "name": "allowance",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  }
-] as const;
-
-// Complete DynamicTreasuryPool ABI with enhanced security features
-const DYNAMIC_TREASURY_POOL_ABI = [
-  {
-    "inputs": [],
-    "name": "getContractBalance",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "totalTreasuryBalance",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
-    "name": "depositTreasury",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256", "name": "amount", "type": "uint256"}],
-    "name": "emergencyWithdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "user", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "distributeReward",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "user", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"},
-      {"internalType": "uint256", "name": "nonce", "type": "uint256"},
-      {"internalType": "bytes", "name": "signature", "type": "bytes"}
-    ],
-    "name": "claimRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
-    "name": "getClaimableAmount",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
-    "name": "nonces",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "calculatorAddress", "type": "address"}],
-    "name": "setPendingCalculatorAuthorization",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "calculatorAddress", "type": "address"}],
-    "name": "activatePendingCalculator",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "calculatorAddress", "type": "address"}],
-    "name": "revokeCalculatorAuthorization",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "authorizedCalculators",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-    "name": "pendingCalculators",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
-
-const KILT_TOKEN_ABI = [
-  {
-    "inputs": [
-      {"internalType": "address", "name": "spender", "type": "address"},
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
-    ],
-    "name": "approve",
-    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-    "name": "balanceOf",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"internalType": "address", "name": "owner", "type": "address"},
-      {"internalType": "address", "name": "spender", "type": "address"}
-    ],
-    "name": "allowance",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
+// ABIs and addresses now imported from centralized contracts file
 
 export function SmartContractPanel() {
   const { toast } = useToast();
@@ -233,14 +61,12 @@ export function SmartContractPanel() {
   const contractAddress = (treasuryConfig as any)?.smartContractAddress;
 
   // Authorized admin addresses for smart contract operations
-  const authorizedAdmins = [
-    "0xAFff1831e663B6F29fb90871Ea8518e8f8B3b71a", // Contract owner (deployer)
-    "0x5bF25Dc1BAf6A96C5A0F724E05EcF4D456c7652e"  // Additional admin wallet
-  ];
+  const authorizedAdmins = AUTHORIZED_ADMINS;
   
   // Check if current wallet is authorized for admin operations
-  const isAuthorizedAdmin = address && authorizedAdmins.includes(address.toLowerCase()) || 
-                           authorizedAdmins.some(admin => admin.toLowerCase() === address?.toLowerCase());
+  const isAuthorizedAdmin = address && authorizedAdmins.some(admin => 
+    admin.toLowerCase() === address.toLowerCase()
+  );
   
   // Fetch real KILT balance for connected wallet with aggressive refresh
   const { data: walletKiltData, refetch: refetchWalletData } = useQuery({
@@ -348,7 +174,7 @@ export function SmartContractPanel() {
       const amountInWei = parseUnits(depositAmount, 18);
       
       approveKilt({
-        address: KILT_TOKEN_ADDRESS as `0x${string}`,
+        address: TOKEN_ADDRESSES.KILT as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [contractAddress as `0x${string}`, amountInWei],
@@ -414,7 +240,7 @@ export function SmartContractPanel() {
       const amountInWei = parseUnits(depositAmount, 18);
       
       transferKilt({
-        address: KILT_TOKEN_ADDRESS as `0x${string}`,
+        address: TOKEN_ADDRESSES.KILT as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'transfer',
         args: [contractAddress as `0x${string}`, amountInWei],

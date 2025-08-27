@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -111,23 +110,11 @@ export function PositionManagementModal({
     try {
       const liquidityToRemove = (BigInt(position.liquidity) * BigInt(removePercentage)) / BigInt(100);
       
-      // Two-step process: Remove liquidity then collect tokens
-      console.log('Remove Liquidity Debug:', {
-        positionId: position.tokenId,
-        totalLiquidity: position.liquidity,
-        removePercentage,
-        liquidityToRemove: liquidityToRemove.toString(),
-        position
-      });
-
-      // Use the integrated function that handles both steps automatically
-      console.log('🔄 Starting removeLiquidityAndCollect (atomic transaction)...');
       await uniswapV3.removeLiquidityAndCollect({
         tokenId: position.tokenId,
         liquidity: liquidityToRemove.toString(),
         removePercentage
       });
-      console.log('✅ Liquidity removed and tokens collected in single transaction');
       
       toast({
         title: "Liquidity Removed Successfully!",
@@ -137,33 +124,25 @@ export function PositionManagementModal({
     } catch (error: any) {
       console.error('Remove liquidity failed:', error);
       
-      // If atomic transaction fails due to circuit breaker, fall back to two-step process
       if (error?.message?.includes('breaker is open') || 
           error?.message?.includes('circuit breaker') ||
           error?.message?.includes('multicall')) {
         
-        console.log('🔄 Multicall failed, attempting two-step process...');
         
         try {
           const liquidityToRemove = (BigInt(position.liquidity) * BigInt(removePercentage)) / BigInt(100);
           
-          // Step 1: Remove liquidity from position
-          console.log('🔄 Step 1: Starting decreaseLiquidity transaction...');
           await uniswapV3.decreaseLiquidity({
             tokenId: position.tokenId,
             liquidity: liquidityToRemove.toString()
           });
-          console.log('✅ Step 1 completed: Liquidity decreased successfully');
           
           // Wait a moment before Step 2
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Step 2: Collect the underlying tokens to wallet
-          console.log('🔄 Step 2: Starting collectLiquidity transaction...');
           await uniswapV3.collectLiquidity({
             tokenId: position.tokenId
           });
-          console.log('✅ Step 2 completed: Tokens collected successfully');
           
           toast({
             title: "Liquidity Removed Successfully!",

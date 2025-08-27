@@ -331,9 +331,7 @@ export function RewardsTracking() {
 
   // Refresh function to reload all rewards data (tab-specific, not whole page)
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    console.log('🔄 Refreshing rewards tab data only...');
-    
+    setIsRefreshing(true);    
     try {
       // Force immediate refetch of all rewards-related data
       const refreshPromises = [];

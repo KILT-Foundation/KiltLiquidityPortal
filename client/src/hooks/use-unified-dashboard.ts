@@ -134,7 +134,6 @@ export function useUnifiedDashboard() {
           throw new Error('Failed to fetch program analytics data');
         }
         const data = await response.json();
-        console.log('Program analytics loaded:', data.totalLiquidity);
         
         // Return enhanced analytics data with DexScreener integration
         return {

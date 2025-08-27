@@ -72,12 +72,6 @@ export function GasEstimationCard() {
         };
         
         setGasEstimate(gasEstimate);
-        console.log('✅ Authentic Base network gas data loaded:', {
-          approve: `${realGasEstimate.approve.costUSD} (${realGasEstimate.approve.cost} ETH)`,
-          mint: `${realGasEstimate.mint.costUSD} (${realGasEstimate.mint.cost} ETH)`,
-          total: `${realGasEstimate.total.costUSD} (${realGasEstimate.total.cost} ETH)`,
-          source: 'Real Base RPC'
-        });
       } catch (err) {
         setGasError('Failed to estimate gas costs');
         console.warn('Gas estimation error (gracefully handled):', err);

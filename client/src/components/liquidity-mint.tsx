@@ -27,15 +27,17 @@ import { useKiltEthConversionRate } from '@/hooks/use-conversion-rate';
 import { useAppSession } from '@/hooks/use-app-session';
 import { TOKENS } from '@/lib/uniswap-v3';
 import { parseUnits } from 'viem';
-import { BASE_NETWORK_ID } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { GasEstimationCard } from './gas-estimation-card';
 import { LiquidityService } from '@/services/liquidity-service';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useQueryClient } from '@tanstack/react-query';
-import { UniswapV3SDKService, KILT_TOKEN, WETH_TOKEN } from '@/lib/uniswap-v3-sdk';
+import { UniswapV3SDKService } from '@/lib/uniswap-v3-sdk';
 import { transactionValidator, type LiquidityParams } from '@/services/transaction-validator';
 import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
+
+// Import centralized token addresses
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
 
 // Ethereum logo component
 const EthereumLogo = ({ className = "w-5 h-5" }) => (
@@ -370,8 +372,8 @@ export function LiquidityMint({
       const strategy = getSelectedStrategy();
       
       const validationParams: LiquidityParams = {
-        token0: WETH_TOKEN.address,
-        token1: KILT_TOKEN.address,
+        token0: TOKEN_ADDRESSES.WETH,
+        token1: TOKEN_ADDRESSES.KILT,
         amount0Desired: parseUnits(ethAmt, 18),
         amount1Desired: parseUnits(kiltAmt, 18),
         amount0Min: (parseUnits(ethAmt, 18) * 95n) / 100n, // 5% slippage
@@ -404,16 +406,6 @@ export function LiquidityMint({
     }
   }, [kiltAmount, ethAmount, selectedStrategy, address]);
 
-  useEffect(() => {
-    if (validationResult) {
-      console.log('🔍 Validation Result:', {
-        isValid: validationResult.isValid,
-        errors: validationResult.errors,
-        warnings: validationResult.warnings,
-        suggestions: validationResult.suggestions
-      });
-    }
-  }, [validationResult]);
 
   const handleApproveTokens = async () => {
     if (!address) return;
@@ -476,15 +468,6 @@ export function LiquidityMint({
         throw new Error('Token amounts must be greater than zero');
       }
       
-      // Debug: Log the parsed amounts
-      console.log('Liquidity amounts:', {
-        kiltAmount,
-        ethAmount,
-        kiltAmountParsed: kiltAmountParsed.toString(),
-        ethAmountParsed: ethAmountParsed.toString(),
-        kiltAmountFloat,
-        ethAmountFloat
-      });
       
       const deadlineTime = Math.floor(Date.now() / 1000) + 1200; // 20 minutes from now for better execution
 
@@ -500,20 +483,13 @@ export function LiquidityMint({
       
       // KILT/ETH pool has specific token order: token0=WETH, token1=KILT
       // Based on pool address 0x82Da478b1382B951cBaD01Beb9eD459cDB16458E
-      const token0 = TOKENS.WETH;  // WETH is token0
-      const token1 = TOKENS.KILT;  // KILT is token1
+      const token0 = TOKEN_ADDRESSES.WETH;  // WETH is token0
+      const token1 = TOKEN_ADDRESSES.KILT;  // KILT is token1
       
       // Set amounts based on known token order
       const amount0Desired = ethAmountParsed;  // WETH amount
       const amount1Desired = kiltAmountParsed; // KILT amount
       
-      console.log('Token order and amounts:', {
-        token0, token1,
-        amount0Desired: amount0Desired.toString(),
-        amount1Desired: amount1Desired.toString(),
-        ethAmountParsed: ethAmountParsed.toString(),
-        kiltAmountParsed: kiltAmountParsed.toString()
-      });
 
       // Use proper tick values based on pool info and selected strategy
       let tickLower, tickUpper;
@@ -527,12 +503,6 @@ export function LiquidityMint({
         // The pool price is token1/token0 ratio
         const currentPoolPrice = poolInfo?.currentPrice || poolInfo?.price || 0.00005; // WETH/KILT price
         
-        // Debug: Log the current pool price
-        console.log('Pool price calculation:', {
-          poolInfo,
-          currentPoolPrice,
-          selectedStrategy
-        });
         
         const strategy = getSelectedStrategy();
         
@@ -553,17 +523,6 @@ export function LiquidityMint({
           tickLower = Math.floor(tickLowerRaw / 60) * 60;
           tickUpper = Math.ceil(tickUpperRaw / 60) * 60;
           
-          // Debug: Log the tick calculation
-          console.log('Tick calculation:', {
-            currentPoolPrice,
-            lowerPrice,
-            upperPrice,
-            tickLowerRaw,
-            tickUpperRaw,
-            tickLower,
-            tickUpper,
-            strategy: strategy.label
-          });
         }
       }
 
@@ -602,7 +561,6 @@ export function LiquidityMint({
       });
 
       // Critical: Wait for transaction confirmation and record position in database
-      console.log('⏳ Waiting for transaction confirmation to extract NFT token ID...');
       
       try {
         // Import viem for transaction receipt parsing
@@ -621,7 +579,6 @@ export function LiquidityMint({
           timeout: 30000 // 30 second timeout
         });
         
-        console.log('📄 Transaction confirmed, parsing logs...');
         
         // Parse the Mint event to extract NFT token ID
         const mintEventAbi = [{
@@ -658,7 +615,6 @@ export function LiquidityMint({
         }
         
         if (nftTokenId) {
-          console.log('🎯 Successfully extracted NFT token ID:', nftTokenId);
           
           // Record position in database as app-created
           const user = await fetch(`/api/users/${address}`).then(r => r.json());
@@ -683,7 +639,6 @@ export function LiquidityMint({
             })
           });
           
-          console.log('✅ Position recorded in database as app-created:', nftTokenId);
           
           // CRITICAL: Immediately invalidate position registration cache to prevent newly created positions 
           // from appearing in "Eligible Positions" section
@@ -868,7 +823,7 @@ export function LiquidityMint({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const swapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8&chain=base`;
+                        const swapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${TOKEN_ADDRESSES.KILT}&chain=base`;
                         window.open(swapUrl, '_blank');
                       }}
                       className="w-full bg-gradient-to-r from-[#ff0066] to-pink-600 hover:from-[#ff0066]/90 hover:to-pink-600/90 text-white border-0 px-4 py-2 font-bold text-sm h-8 transition-all duration-200 shadow-lg hover:shadow-pink-500/25 transform hover:scale-105 touch-manipulation"

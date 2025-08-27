@@ -38,13 +38,10 @@ import { queryClient } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
 
 // Lightweight components
-import { UserPersonalAPR } from './user-personal-apr';
 import { MobileWalletConnect } from './mobile-wallet-connect';
 
 // Removed gas estimation card - consolidated into main interface
 import { PositionRegistration } from './position-registration';
-import { LoadingScreen } from './loading-screen';
-
 import { useWalletClient } from 'wagmi';
 
 // Lazy load heavy components
@@ -75,18 +72,15 @@ import { LiquidityService } from '@/services/liquidity-service';
 import { useEthPrice } from '@/hooks/use-eth-price';
 
 // Universal logo components
-import { TokenLogo, KiltLogo, EthLogo } from '@/components/ui/token-logo';
+import { KiltLogo, EthLogo } from '@/components/ui/token-logo';
 import { CyberpunkKiltLogo } from './cyberpunk-kilt-logo';
 
 // Viem utilities for token amount parsing
-import { createWalletClient, custom, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 import { BuyKilt } from './buy-kilt';
-import { base } from 'viem/chains';
 
-// Token contract addresses
-const WETH_TOKEN = '0x4200000000000000000000000000000000000006'; // Base WETH
-const KILT_TOKEN = '0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8';
-
+// Import centralized token addresses
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
 
 
 // STREAMLINED APR Components using single API endpoint
@@ -309,7 +303,6 @@ export function MainDashboard() {
     }
     
     try {
-      console.log('🚀 Starting Quick Add Liquidity process...');
       
       const amounts = calculateOptimalAmounts();
       const hasInsufficientBalance = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0 || parseFloat(amounts.totalValue) < 2;
@@ -327,12 +320,6 @@ export function MainDashboard() {
       const amount0Desired = parseUnits(amounts.ethAmount, 18); // WETH
       const amount1Desired = parseUnits(amounts.kiltAmount, 18); // KILT
       
-      console.log('💰 Quick Add amounts:', {
-        eth: amounts.ethAmount,
-        kilt: amounts.kiltAmount,
-        amount0Desired: amount0Desired.toString(),
-        amount1Desired: amount1Desired.toString()
-      });
       
       toast({
         title: "Creating Liquidity Position",
@@ -340,10 +327,9 @@ export function MainDashboard() {
       });
       
       // Create the position using mintPosition from useUniswapV3
-      console.log('🏗️ Creating liquidity position...');
       const txHash = await mintPosition({
-        token0: WETH_TOKEN as `0x${string}`,
-        token1: KILT_TOKEN as `0x${string}`,
+        token0: TOKEN_ADDRESSES.WETH as `0x${string}`,
+        token1: TOKEN_ADDRESSES.KILT as `0x${string}`,
         fee: 3000, // 0.3%
         tickLower: -887220, // Full range
         tickUpper: 887220,  // Full range
@@ -356,7 +342,6 @@ export function MainDashboard() {
         useNativeETH: true
       });
       
-      console.log('✅ Position created! Hash:', txHash);
       
       toast({
         title: "Liquidity Added Successfully!",
@@ -364,7 +349,6 @@ export function MainDashboard() {
       });
       
       // Auto-register the new position immediately after successful creation
-      console.log('🔄 Auto-registering new position in reward program...');
       
       // Wait briefly for transaction finalization, then register
       setTimeout(async () => {
@@ -381,7 +365,6 @@ export function MainDashboard() {
           
           if (response.ok) {
             const result = await response.json();
-            console.log('✅ Auto-registration completed:', result);
             
             if (result.registeredCount > 0) {
               toast({
@@ -394,10 +377,10 @@ export function MainDashboard() {
             queryClient.invalidateQueries({ queryKey: ['/api/rewards'] });
             queryClient.invalidateQueries({ queryKey: ['/api/positions'] });
           } else {
-            console.log('⚠️ Auto-registration failed - user can register manually');
+            // Auto-registration failed - user can register manually
           }
         } catch (autoRegError) {
-          console.log('⚠️ Auto-registration error:', autoRegError);
+          // Auto-registration error occurred
         }
       }, 2000); // Wait 2 seconds for blockchain confirmation
       
@@ -445,8 +428,8 @@ export function MainDashboard() {
             playsInline 
             className="absolute inset-0 w-full h-full object-cover"
             style={{ opacity: 1 }}
-            onLoadStart={() => console.log('Landing page video loading started')}
-            onCanPlay={() => console.log('Landing page video can play')}
+            onLoadStart={() => {/* Video loading started */}}
+            onCanPlay={() => {/* Video can play */}}
             onError={(e) => console.error('Landing page video error:', e)}
           >
             <source src={backgroundVideo} type="video/mp4" />
@@ -613,8 +596,8 @@ export function MainDashboard() {
         preload="auto"
         className="fixed top-0 left-0 w-full h-full object-cover"
         style={{ zIndex: 1 }}
-        onLoadStart={() => console.log('Video loading started')}
-        onCanPlay={() => console.log('Video can play')}
+        onLoadStart={() => {/* Video loading started */}}
+        onCanPlay={() => {/* Video can play */}}
         onError={(e) => console.error('Video error:', e)}
       >
         <source src={backgroundVideo} type="video/mp4" />
@@ -691,7 +674,7 @@ export function MainDashboard() {
             </TabsTrigger>
             <button
               onClick={() => {
-                const uniswapUrl = `https://app.uniswap.org/swap?outputCurrency=0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8&chain=base&inputCurrency=ETH`;
+                const uniswapUrl = `https://app.uniswap.org/swap?outputCurrency=${TOKEN_ADDRESSES.KILT}&chain=base&inputCurrency=ETH`;
                 window.open(uniswapUrl, '_blank');
               }}
               className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/15 data-[state=active]:to-white/10 data-[state=active]:text-white data-[state=active]:shadow-lg text-white/70 hover:text-white/90 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-center min-w-0 hover:bg-white/5 group cursor-pointer"

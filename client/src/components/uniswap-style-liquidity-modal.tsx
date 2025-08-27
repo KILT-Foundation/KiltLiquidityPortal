@@ -37,7 +37,7 @@ const EthereumLogo = ({ className = "w-5 h-5" }) => (
     <path d="M127.961 312.187L126.385 314.154V415.484L127.961 417L255.922 237.832L127.961 312.187Z" fill="#627EEA"/>
     <path d="M127.962 417V312.187L0 237.832L127.962 417Z" fill="#627EEA"/>
     <path d="M127.961 287.688L255.922 212.32L127.961 153.864V287.688Z" fill="#627EEA"/>
-    <path d="0 212.32L127.962 287.688V153.864L0 212.32Z" fill="#627EEA"/>
+    <path d="M0 212.32L127.962 287.688V153.864L0 212.32Z" fill="#627EEA"/>
   </svg>
 );
 
@@ -176,15 +176,6 @@ export function UniswapStyleLiquidityModal({
         const ethAmountString = parseUnits(ethAmount, 18).toString();
         const kiltAmountString = parseUnits(kiltAmount, 18).toString();
         
-        console.log('Add Liquidity Debug:', {
-          positionId: positionId.toString(),
-          ethAmount,
-          kiltAmount,
-          ethAmountString,
-          kiltAmountString,
-          addAsEth,
-          position
-        });
         
         // Use the increaseLiquidity function for existing positions
         const increaseLiquidityParams = {
@@ -242,13 +233,7 @@ export function UniswapStyleLiquidityModal({
         const totalLiquidity = position?.liquidity || '0';
         const liquidityToRemove = (BigInt(totalLiquidity) * BigInt(removePercentage[0]) / 100n).toString();
         
-        console.log('Remove Liquidity Debug:', {
-          positionId: positionId.toString(),
-          totalLiquidity,
-          removePercentage: removePercentage[0],
-          liquidityToRemove,
-          position
-        });
+
 
         // Calculate minimum amounts (with slippage protection)
         const amount0Min = '0'; // For testing, use 0 - in production should calculate based on slippage
@@ -299,10 +284,7 @@ export function UniswapStyleLiquidityModal({
           return;
         }
 
-        console.log('Collect Fees Debug:', {
-          positionId: positionId.toString(),
-          position
-        });
+
 
         const txHash = await collectFees({
           tokenId: positionId.toString(),

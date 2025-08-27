@@ -102,9 +102,6 @@ export function PositionRegistration() {
       if (!address) return { eligiblePositions: [], totalPositions: 0, message: '' };
       
       try {
-        console.log('⚡ Using Uniswap-optimized eligible endpoint');
-        
-        // Use blazing fast optimized endpoint
         const response = await fetch(`/api/positions/eligible/${address}`);
         if (!response.ok) {
           throw new Error('Failed to fetch eligible positions');
@@ -113,8 +110,6 @@ export function PositionRegistration() {
         const result = await response.json();
         const timing = response.headers.get('X-Response-Time') || 'unknown';
         const cacheStatus = response.headers.get('X-Cache-Status') || 'unknown';
-        
-        console.log(`⚡ UNISWAP-SPEED: Eligible positions in ${timing} (${cacheStatus})`);
         
         return {
           eligiblePositions: result.eligiblePositions || [],

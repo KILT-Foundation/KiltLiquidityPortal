@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWagmiWallet } from './use-wagmi-wallet';
 import { useToast } from './use-toast';
-import { createPublicClient, createWalletClient, custom, http, formatUnits, parseUnits, maxUint256, encodeFunctionData } from 'viem';
+import { createPublicClient, http, formatUnits, parseUnits, encodeFunctionData } from 'viem';
 import { base } from 'viem/chains';
 import { useQuery } from '@tanstack/react-query';
 import { useWalletClient } from 'wagmi';
@@ -188,7 +188,7 @@ function useBlockchainConfig() {
 export function useUniswapV3() {
   const { address, isConnected } = useWagmiWallet();
   const { toast } = useToast();
-  const { data: walletClient } = useWalletClient();
+  const { data : walletClient } = useWalletClient();
 
   
   // Get blockchain configuration from admin panel - MUST be called unconditionally
@@ -606,7 +606,7 @@ export function useUniswapV3() {
       // Auto-register the position if tokenId was found
       if (tokenId && address) {
         try {
-          console.log(`🔄 Auto-registering position ${tokenId} for user ${address}`);
+          // Auto-registering position for user
           
           // Optimistic UI update: immediately invalidate eligible positions cache
           // to prevent position from showing in eligible list
@@ -645,7 +645,7 @@ export function useUniswapV3() {
 
             if (registerResponse.ok) {
               const result = await registerResponse.json();
-              console.log(`✅ Position ${tokenId} auto-registered successfully:`, result);
+              // Position auto-registered successfully
               
               // Invalidate all relevant caches immediately to update UI
               const { queryClient } = await import('@/lib/queryClient');
@@ -738,10 +738,7 @@ export function useUniswapV3() {
         }
 
         // Create wallet client
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
 
         // Send approval transaction
         const hash = await walletClient.writeContract({
@@ -807,7 +804,7 @@ export function useUniswapV3() {
 
             // If allowance is insufficient, request approval
             if (allowance < amount1Desired) {
-              console.log('🔐 KILT approval needed - requesting user approval...');
+              // KILT approval needed - requesting user approval
               toast({
                 title: "Token Approval Required",
                 description: "Please approve KILT spending in your wallet",
@@ -860,15 +857,6 @@ export function useUniswapV3() {
           deadline: BigInt(params.deadline),
         };
 
-        console.log('Mint parameters:', {
-          ...mintParams,
-          amount0Desired: mintParams.amount0Desired.toString(),
-          amount1Desired: mintParams.amount1Desired.toString(),
-          amount0Min: mintParams.amount0Min.toString(),
-          amount1Min: mintParams.amount1Min.toString(),
-          deadline: mintParams.deadline.toString(),
-          ethValue: ethValue.toString()
-        });
 
         // Send minting transaction with proper account
         const hash = await walletClient.writeContract({
@@ -928,23 +916,12 @@ export function useUniswapV3() {
       try {
         if (!address) throw new Error('Wallet not connected');
         
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
 
         // Check and handle token approvals first
         const amount0Desired = BigInt(params.amount0Desired);
         const amount1Desired = BigInt(params.amount1Desired);
         
-        console.log('🔍 Transaction Parameters:', {
-          tokenId: params.tokenId,
-          amount0Desired: amount0Desired.toString(),
-          amount1Desired: amount1Desired.toString(),
-          wethToken: WETH_TOKEN,
-          kiltToken: KILT_TOKEN,
-          positionManager: UNISWAP_V3_POSITION_MANAGER
-        });
         
         // Check token balances first
         const [wethBalance, kiltBalance] = await Promise.all([
@@ -962,12 +939,6 @@ export function useUniswapV3() {
           })
         ]);
         
-        console.log('💰 Token Balances:', {
-          wethBalance: wethBalance.toString(),
-          kiltBalance: kiltBalance.toString(),
-          requiredWeth: amount0Desired.toString(),
-          requiredKilt: amount1Desired.toString()
-        });
         
         // Handle ETH vs WETH based on user preference  
         const useEth = (params as any).useEth || false;
@@ -977,17 +948,11 @@ export function useUniswapV3() {
             address: address as `0x${string}`,
           });
           
-          console.log('💡 Native ETH Check:', {
-            ethBalance: ethBalance.toString(),
-            requiredEth: amount0Desired.toString(),
-            hasEnoughEth: ethBalance >= amount0Desired + parseUnits('0.002', 18) // Reserve 0.002 ETH for gas
-          });
           
           if (ethBalance < amount0Desired + parseUnits('0.002', 18)) {
             throw new Error(`Insufficient ETH balance for transaction. Have: ${formatUnits(ethBalance, 18)} ETH, Need: ${formatUnits(amount0Desired + parseUnits('0.002', 18), 18)} ETH (including gas)`);
           }
           
-          console.log('✅ Using native ETH - no wrapping needed');
           
         } else {
           // When using WETH, check WETH balance and wrap if needed
@@ -998,11 +963,6 @@ export function useUniswapV3() {
             
             const totalWethNeeded = amount0Desired - wethBalance;
             
-            console.log('💡 ETH Wrapping Check:', {
-              ethBalance: ethBalance.toString(),
-              totalWethNeeded: totalWethNeeded.toString(),
-              hasEnoughEth: ethBalance >= totalWethNeeded
-            });
             
             if (ethBalance >= totalWethNeeded + parseUnits('0.001', 18)) { // Reserve 0.001 ETH for gas
               toast({
@@ -1052,7 +1012,6 @@ export function useUniswapV3() {
             args: [address as `0x${string}`, UNISWAP_V3_POSITION_MANAGER as `0x${string}`],
           });
           
-          console.log('🔒 WETH Allowance:', wethAllowance.toString());
           
           if (wethAllowance < amount0Desired) {
             toast({
@@ -1076,7 +1035,7 @@ export function useUniswapV3() {
             });
           }
         } else if (useEth) {
-          console.log('🔓 Skipping WETH approval - using native ETH');
+          // Skipping WETH approval - using native ETH
         }
         
         // Check KILT (token1) allowance
@@ -1088,7 +1047,7 @@ export function useUniswapV3() {
             args: [address as `0x${string}`, UNISWAP_V3_POSITION_MANAGER as `0x${string}`],
           });
           
-          console.log('🔒 KILT Allowance:', kiltAllowance.toString());
+          // KILT allowance checked
           
           if (kiltAllowance < amount1Desired) {
             toast({
@@ -1116,12 +1075,11 @@ export function useUniswapV3() {
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
         
         // Execute the increaseLiquidity transaction with proper ETH handling
-        console.log('🚀 Executing increaseLiquidity transaction...');
         
         let hash;
         if (useEth) {
           // When using ETH, include the ETH value in the transaction
-          console.log('💎 Using native ETH transaction with value:', formatUnits(amount0Desired, 18), 'ETH');
+                      // Using native ETH transaction
           hash = await walletClient.writeContract({
             address: UNISWAP_V3_POSITION_MANAGER as `0x${string}`,
             abi: POSITION_MANAGER_ABI,
@@ -1139,7 +1097,7 @@ export function useUniswapV3() {
           });
         } else {
           // Standard WETH transaction (no ETH value)
-          console.log('🔄 Using WETH transaction (no ETH value)');
+                      // Using WETH transaction (no ETH value)
           hash = await walletClient.writeContract({
             address: UNISWAP_V3_POSITION_MANAGER as `0x${string}`,
             abi: POSITION_MANAGER_ABI,
@@ -1197,10 +1155,7 @@ export function useUniswapV3() {
       try {
         if (!address) throw new Error('Wallet not connected');
         
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
 
         // Verify position ownership before attempting to remove liquidity
         try {
@@ -1215,7 +1170,6 @@ export function useUniswapV3() {
             throw new Error(`Position #${params.tokenId} is not owned by connected wallet`);
           }
           
-          console.log(`✅ Position ownership verified for token ${params.tokenId}`);
         } catch (ownershipError) {
           console.error('Position ownership verification failed:', ownershipError);
           throw new Error(`Cannot verify position ownership: ${(ownershipError as Error).message}`);
@@ -1231,8 +1185,7 @@ export function useUniswapV3() {
           });
           
           const currentLiquidity = positionData[7] as bigint; // liquidity is at index 7
-          console.log(`Current position liquidity: ${currentLiquidity.toString()}`);
-          console.log(`Attempting to remove: ${params.liquidity}`);
+          // Current position liquidity checked
           
           if (currentLiquidity === 0n) {
             throw new Error(`Position #${params.tokenId} has no liquidity to remove`);
@@ -1248,12 +1201,7 @@ export function useUniswapV3() {
 
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
         
-        console.log('🔄 Starting decreaseLiquidity with verified parameters:', {
-          tokenId: params.tokenId,
-          liquidity: params.liquidity,
-          deadline,
-          contractAddress: UNISWAP_V3_POSITION_MANAGER
-        });
+        // Starting decreaseLiquidity with verified parameters
         
         const hash = await walletClient.writeContract({
           address: UNISWAP_V3_POSITION_MANAGER as `0x${string}`,
@@ -1322,10 +1270,7 @@ export function useUniswapV3() {
       try {
         if (!address) throw new Error('Wallet not connected');
         
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
         
         const hash = await walletClient.writeContract({
           address: UNISWAP_V3_POSITION_MANAGER as `0x${string}`,
@@ -1363,10 +1308,7 @@ export function useUniswapV3() {
       try {
         if (!address) throw new Error('Wallet not connected');
         
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
         
         const hash = await walletClient.writeContract({
           address: UNISWAP_V3_POSITION_MANAGER as `0x${string}`,
@@ -1406,14 +1348,10 @@ export function useUniswapV3() {
       try {
         if (!address) throw new Error('Wallet not connected');
         
-        const walletClient = createWalletClient({
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
 
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
         
-        console.log('🔄 Step 1: Starting decreaseLiquidity transaction...');
         
         // Step 1: Remove liquidity from position
         const decreaseHash = await walletClient.writeContract({
@@ -1432,12 +1370,10 @@ export function useUniswapV3() {
 
         // Wait for Step 1 to complete
         await baseClient.waitForTransactionReceipt({ hash: decreaseHash });
-        console.log('✅ Step 1 completed: Liquidity decreased successfully');
         
         // Wait a moment to ensure network state is updated
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        console.log('🔄 Step 2: Starting collectLiquidity transaction...');
         
         // Step 2: Collect the underlying tokens to wallet
         const collectHash = await walletClient.writeContract({
@@ -1455,7 +1391,6 @@ export function useUniswapV3() {
 
         // Wait for Step 2 to complete
         await baseClient.waitForTransactionReceipt({ hash: collectHash });
-        console.log('✅ Step 2 completed: Tokens collected successfully');
         
         toast({
           title: "Liquidity Removed!",
@@ -1479,11 +1414,7 @@ export function useUniswapV3() {
       }
 
       try {
-        const walletClient = createWalletClient({
-          account: address as `0x${string}`,
-          chain: base,
-          transport: custom(window.ethereum),
-        });
+        if (!walletClient) throw new Error('Wallet client not available');
 
         // First decrease all liquidity to 0
         const hash = await walletClient.writeContract({

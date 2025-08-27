@@ -126,19 +126,17 @@ function initializeApp() {
   
   // Create React root and render app
   try {
-    console.log('Attempting to create React root...');
     const root = createRoot(rootElement);
-    console.log('React root created, attempting to render...');
     
     root.render(
       <ErrorBoundary>
         <App />
       </ErrorBoundary>
     );
-    console.log('✅ React app mounted successfully');
+    console.warn('✅ React app mounted successfully');
     
     // React app mounted successfully - remove forced fallback
-    console.log('✅ React app mounted and working!');
+    console.warn('✅ React app mounted and working!');
   } catch (error) {
     console.error('Failed to mount React app:', error);
     renderSimpleFallback(rootElement);

@@ -175,7 +175,7 @@ export function CyberpunkAdminPanel() {
   // Update state when data loads
   useEffect(() => {
     if (existingTreasuryConfig && !treasuryLoading) {
-      console.log('Loading treasury config:', existingTreasuryConfig);
+      // Loading treasury config
       setTreasuryConfig({
         ...treasuryConfig,
         ...existingTreasuryConfig,

@@ -1,5 +1,4 @@
 import { TOKENS } from '@/lib/uniswap-v3';
-import { parseUnits } from 'viem';
 
 export interface LiquidityParams {
   kiltAmount: string;

@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ExternalLink } from 'lucide-react';
 import { useKiltTokenData } from '@/hooks/use-kilt-data';
 import { useWagmiWallet } from '@/hooks/use-wagmi-wallet';
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+
+// Import centralized token addresses
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
+
 import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
+import { useState } from 'react';
 
 // Ethereum Logo Component
 const EthereumLogo = ({ className = "w-5 h-5" }) => (
@@ -52,7 +55,7 @@ export const BidirectionalSwapModal = ({
     const params = new URLSearchParams({
       chain: 'base',
       inputCurrency: 'ETH', 
-      outputCurrency: '0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8', // KILT token address
+      outputCurrency: TOKEN_ADDRESSES.KILT, // KILT token address
       theme: 'dark'
     });
     
@@ -185,7 +188,7 @@ export const BidirectionalSwapModal = ({
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
                       <div className="text-white/50 mb-1">Token Address</div>
-                      <div className="font-mono text-white/80">0x5D0D...2d8</div>
+                      <div className="font-mono text-white/80">{TOKEN_ADDRESSES.KILT.slice(0, 6)}...{TOKEN_ADDRESSES.KILT.slice(-4)}</div>
                     </div>
                     <div>
                       <div className="text-white/50 mb-1">Network</div>

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useWagmiWallet } from './use-wagmi-wallet';
 import { useToast } from './use-toast';
-import { parseUnits, maxUint256 } from 'viem';
-import { base } from 'viem/chains';
 import { useWalletClient } from 'wagmi';
 
 // Uniswap V3 Position Manager on Base
@@ -62,7 +60,7 @@ export function useSimpleUniswapV3() {
   const [isMinting, setIsMinting] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   
-  const { data: walletClient } = useWalletClient();
+  const { data : walletClient } = useWalletClient();
 
   const approveToken = async (tokenAddress: string, amount?: bigint) => {
     if (!walletClient || !address) throw new Error('Wallet not connected');
@@ -137,20 +135,6 @@ export function useSimpleUniswapV3() {
       // Calculate ETH value for native ETH conversion to WETH
       // When using ETH (native), send the ETH amount as transaction value
       const value = params.useNativeETH ? params.amount0Desired : 0n;
-
-      console.log('🚀 Minting position with:', {
-        token0: mintParams.token0, // WETH
-        token1: mintParams.token1, // KILT  
-        amount0Desired: mintParams.amount0Desired.toString(),
-        amount1Desired: mintParams.amount1Desired.toString(),
-        amount0Min: mintParams.amount0Min.toString(),
-        amount1Min: mintParams.amount1Min.toString(),
-        value: value.toString(),
-        valueInETH: Number(value) / 1e18,
-        useNativeETH: params.useNativeETH,
-        ethAmount: `${Number(mintParams.amount0Desired) / 1e18} ETH`,
-        kiltAmount: `${Number(mintParams.amount1Desired) / 1e18} KILT`
-      });
 
       const hash = await walletClient.writeContract({
         address: POSITION_MANAGER_ADDRESS as `0x${string}`,

@@ -39,6 +39,7 @@ import { useValidatedPositions } from '@/hooks/use-validated-positions';
 import { useMultiplePositionFees } from '@/hooks/use-position-fees';
 import { UniswapStyleLiquidityModal } from '@/components/uniswap-style-liquidity-modal';
 import { CompleteRemoveLiquidityButton } from '@/components/complete-remove-liquidity-button';
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
 
 export function UserPositions() {
   const { address, isConnected } = useWagmiWallet();
@@ -157,7 +158,7 @@ export function UserPositions() {
   
   // Count non-KILT positions
   const nonKiltPositions = Array.isArray(userPositions) ? userPositions.filter((pos: any) => {
-    const kiltTokenAddress = "0x5d0dd05bb095fdd6af4865a1adf97c39c85ad2d8"; // Retrieved from blockchain config
+    const kiltTokenAddress = TOKEN_ADDRESSES.KILT; // Retrieved from centralized constants
     const hasKilt = pos.token0?.toLowerCase() === kiltTokenAddress.toLowerCase() || 
                    pos.token1?.toLowerCase() === kiltTokenAddress.toLowerCase();
     return !hasKilt;

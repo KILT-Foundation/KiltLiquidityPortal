@@ -7,6 +7,7 @@ import { useWagmiWallet } from '@/hooks/use-wagmi-wallet';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
 
 // Ethereum Logo Component
 const EthereumLogo = ({ className = "w-5 h-5" }) => (
@@ -222,8 +223,8 @@ export const SwapModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                   // Check if user is connected
                   if (typeof window.ethereum === 'undefined') {
                     // Fallback to Uniswap redirect if no wallet
-                    const swapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8&chain=base&exactAmount=${ethAmount}&exactField=input`;
-                    window.open(swapUrl, '_blank');
+                    const fallbackSwapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${TOKEN_ADDRESSES.KILT}&chain=base&exactAmount=${ethAmount}&exactField=input`;
+                    window.open(fallbackSwapUrl, '_blank');
                     onClose();
                     return;
                   }
@@ -234,8 +235,8 @@ export const SwapModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
                   if (!userAddress) {
                     // Fallback to Uniswap if no address
-                    const swapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8&chain=base&exactAmount=${ethAmount}&exactField=input`;
-                    window.open(swapUrl, '_blank');
+                    const noAddressSwapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${TOKEN_ADDRESSES.KILT}&chain=base&exactAmount=${ethAmount}&exactField=input`;
+                    window.open(noAddressSwapUrl, '_blank');
                     onClose();
                     return;
                   }
@@ -251,22 +252,18 @@ export const SwapModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
                   const { swapData } = await response.json();
 
-                  // Execute the swap transaction
-                  console.log('Sending transaction with data:', swapData);
-                  
                   const txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',
                     params: [swapData]
                   });
 
-                  console.log('Swap transaction sent:', txHash);
                   onClose();
                   
                 } catch (error) {
                   console.error('Swap error:', error);
                   // Fallback to Uniswap redirect on any error
-                  const swapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8&chain=base&exactAmount=${ethAmount}&exactField=input`;
-                  window.open(swapUrl, '_blank');
+                  const errorFallbackSwapUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${TOKEN_ADDRESSES.KILT}&chain=base&exactAmount=${ethAmount}&exactField=input`;
+                  window.open(errorFallbackSwapUrl, '_blank');
                   onClose();
                 }
               }}
