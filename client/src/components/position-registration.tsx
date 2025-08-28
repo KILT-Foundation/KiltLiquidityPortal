@@ -16,7 +16,6 @@ import {
 import { useWagmiWallet } from '@/hooks/use-wagmi-wallet';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
 
 
 interface ExternalPosition {
