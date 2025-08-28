@@ -81,7 +81,7 @@ export function CyberpunkAdminPanel() {
         data: configWithCalculations
       });
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate ALL queries that depend on treasury configuration for blazing fast updates
       queryClient.invalidateQueries({ queryKey: ['/api/admin/treasury/config'] });
       queryClient.invalidateQueries({ queryKey: ['maxAPR'] });
@@ -96,6 +96,20 @@ export function CyberpunkAdminPanel() {
       // Force refetch of all cached data for instant main app updates
       queryClient.refetchQueries({ queryKey: ['maxAPR'] });
       queryClient.refetchQueries({ queryKey: ['programAnalytics'] });
+      
+      // Clear server-side admin configuration cache
+      try {
+        await fetch('/api/admin/clear-cache', { method: 'POST' });
+        console.log('🗑️ Server admin config cache cleared');
+      } catch (error) {
+        console.warn('Failed to clear server cache:', error);
+      }
+      
+      // Dispatch custom event to notify all components of admin updates
+      window.dispatchEvent(new CustomEvent('admin-data-updated'));
+      
+      // Also update localStorage for cross-tab communication
+      localStorage.setItem('admin-data-updated', Date.now().toString());
       
       toast({
         title: "[TREASURY_UPDATE_SUCCESS]",
@@ -127,7 +141,7 @@ export function CyberpunkAdminPanel() {
         }
       });
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate ALL queries that depend on program settings for blazing fast updates
       queryClient.invalidateQueries({ queryKey: ['/api/admin/program/settings'] });
       queryClient.invalidateQueries({ queryKey: ['maxAPR'] });
@@ -141,6 +155,20 @@ export function CyberpunkAdminPanel() {
       // Force refetch of all cached data for instant main app updates
       queryClient.refetchQueries({ queryKey: ['maxAPR'] });
       queryClient.refetchQueries({ queryKey: ['programAnalytics'] });
+      
+      // Clear server-side admin configuration cache
+      try {
+        await fetch('/api/admin/clear-cache', { method: 'POST' });
+        console.log('🗑️ Server admin config cache cleared');
+      } catch (error) {
+        console.warn('Failed to clear server cache:', error);
+      }
+      
+      // Dispatch custom event to notify all components of admin updates
+      window.dispatchEvent(new CustomEvent('admin-data-updated'));
+      
+      // Also update localStorage for cross-tab communication
+      localStorage.setItem('admin-data-updated', Date.now().toString());
       
       toast({
         title: "[PROGRAM_SETTINGS_SUCCESS]",

@@ -9,7 +9,7 @@ let walletConnectConnector: ReturnType<typeof walletConnect> | null = null;
 function getWalletConnectConnector() {
   if (!walletConnectConnector) {
     walletConnectConnector = walletConnect({
-      projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo-project-id',
+      projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
       metadata: {
         name: 'KILT Liquidity Portal',
         description: 'KILT token liquidity incentive program on Base',

@@ -138,7 +138,7 @@ export class UnifiedRewardService {
   /**
    * Get admin configuration with caching
    */
-  private async getAdminConfiguration(): Promise<{ dailyBudget: number; treasuryAllocation: number; programDurationDays: number }> {
+  private async getAdminConfiguration(): Promise<{ dailyBudget: number; treasuryAllocation: number; programDurationDays: number; programStartDate: Date }> {
     const cacheKey = 'admin_config';
     const cached = this.cache.get(cacheKey);
     
@@ -146,7 +146,8 @@ export class UnifiedRewardService {
       return { 
         dailyBudget: cached.dailyBudget, 
         treasuryAllocation: cached.treasuryAllocation,
-        programDurationDays: cached.programDurationDays || 60
+        programDurationDays: cached.programDurationDays || 60,
+        programStartDate: cached.programStartDate || new Date('2024-01-01')
       };
     }
 
@@ -157,7 +158,8 @@ export class UnifiedRewardService {
       const config = {
         dailyBudget: typeof settings?.dailyRewardsCap === 'string' ? parseFloat(settings.dailyRewardsCap) : (settings?.dailyRewardsCap || 25000),
         treasuryAllocation: typeof settings?.totalAllocation === 'string' ? parseFloat(settings.totalAllocation) : (settings?.totalAllocation || 1500000),
-        programDurationDays: settings?.programDurationDays || 60
+        programDurationDays: settings?.programDurationDays || 60,
+        programStartDate: settings?.programStartDate ? new Date(settings.programStartDate) : new Date('2024-01-01')
       };
 
       this.cache.set(cacheKey, {
@@ -169,7 +171,12 @@ export class UnifiedRewardService {
       return config;
     } catch (error) {
       console.warn('Failed to get admin config, using defaults:', error);
-      return { dailyBudget: 25000, treasuryAllocation: 1500000, programDurationDays: 60 };
+      return { 
+        dailyBudget: 25000, 
+        treasuryAllocation: 1500000, 
+        programDurationDays: 60,
+        programStartDate: new Date('2024-01-01')
+      };
     }
   }
 
@@ -516,22 +523,30 @@ export class UnifiedRewardService {
         console.warn('Failed to calculate dynamic distributed amount, using fallback:', error);
       }
     }
-    const treasuryRemaining = 1500000 - actualTotalDistributed;
+    // Get dynamic admin configuration instead of hardcoded values
+    const adminConfig = await this.getAdminConfiguration();
+    const treasuryRemaining = adminConfig.treasuryAllocation - actualTotalDistributed;
+    
+    // Calculate days remaining based on actual program start date from admin config
+    const now = new Date();
+    const daysSinceStart = Math.floor((now.getTime() - adminConfig.programStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, adminConfig.programDurationDays - daysSinceStart);
     
     console.log('🔍 ENHANCED PROGRAM ANALYTICS - Pool TVL: $' + (dexScreenerData.poolTVL || 0).toLocaleString(), 'Unique Registered Users:', registeredUserCount, 'Total Active Positions:', totalRegisteredPositions);
     console.log('💰 TREASURY ANALYTICS - Total Distributed:', actualTotalDistributed, 'KILT, Remaining:', treasuryRemaining, 'KILT');
+    console.log('⚙️ ADMIN CONFIG - Daily Budget:', adminConfig.dailyBudget, 'KILT, Treasury:', adminConfig.treasuryAllocation, 'KILT, Duration:', adminConfig.programDurationDays, 'days');
     
     return {
       totalLiquidity: dexScreenerData.poolTVL || 102250.23,
       activeLiquidityProviders: registeredUserCount, // App registered users
       totalRewardsDistributed: actualTotalDistributed,
-      dailyEmissionRate: 25000, // Daily KILT emission
+      dailyEmissionRate: adminConfig.dailyBudget, // Dynamic daily KILT emission from admin config
       programAPR: streamlinedData.programAPR, // Use streamlined realistic APR
-      treasuryTotal: 1500000,
+      treasuryTotal: adminConfig.treasuryAllocation, // Dynamic treasury total from admin config
       treasuryRemaining: treasuryRemaining,
       totalDistributed: actualTotalDistributed,
-      programDuration: 60,
-      daysRemaining: 55,
+      programDuration: adminConfig.programDurationDays, // Dynamic program duration from admin config
+      daysRemaining: daysRemaining, // Calculated based on actual start date
       totalPositions: totalRegisteredPositions, // Real-time registered positions
       // averagePositionSize removed from API response (no longer needed in UI)
       poolVolume24h: dexScreenerData.volume24h || 0, // DexScreener 24h volume
@@ -545,6 +560,14 @@ export class UnifiedRewardService {
    */
   clearCache(): void {
     this.cache.clear();
+  }
+
+  /**
+   * Clear admin configuration cache (called when admin updates configuration)
+   */
+  clearAdminConfigCache(): void {
+    this.cache.delete('admin_config');
+    console.log('🗑️ Admin configuration cache cleared');
   }
 }
 

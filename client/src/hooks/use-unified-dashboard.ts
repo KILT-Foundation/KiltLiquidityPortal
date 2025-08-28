@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWagmiWallet } from './use-wagmi-wallet';
 import { useUniswapV3 } from './use-uniswap-v3';
 import { useKiltTokenData } from './use-kilt-data';
 import { useAdminSync } from './use-admin-sync';
+import { useEffect } from 'react';
 
 /**
  * Unified dashboard hook that provides interconnected data across all components
@@ -14,6 +15,9 @@ export function useUnifiedDashboard() {
   
   // Enable blazing fast admin synchronization
   useAdminSync();
+  
+  // Get query client for cache invalidation
+  const queryClient = useQueryClient();
 
   const { data: kiltData } = useKiltTokenData();
 
@@ -134,7 +138,6 @@ export function useUnifiedDashboard() {
           throw new Error('Failed to fetch program analytics data');
         }
         const data = await response.json();
-        
         // Return enhanced analytics data with DexScreener integration
         return {
           totalLiquidity: data.totalLiquidity, // Real pool TVL from DexScreener
@@ -170,6 +173,32 @@ export function useUnifiedDashboard() {
     retry: 3, // Retry failed requests
     retryDelay: 1000 // 1 second between retries
   });
+
+  // Listen for admin updates and invalidate program analytics cache
+  useEffect(() => {
+    const handleAdminUpdate = () => {
+      
+      // Invalidate program analytics and related queries
+      queryClient.invalidateQueries({ queryKey: ['programAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['maxAPR'] });
+      queryClient.invalidateQueries({ queryKey: ['expected-returns'] });
+      
+      queryClient.refetchQueries({ queryKey: ['programAnalytics'] });
+    };
+
+    window.addEventListener('admin-data-updated', handleAdminUpdate);
+    
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'admin-data-updated') {
+        handleAdminUpdate();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('admin-data-updated', handleAdminUpdate);
+      window.removeEventListener('storage', handleAdminUpdate);
+    };
+  }, [queryClient]);
 
   // Get user analytics dashboard
   const { data: userAnalytics } = useQuery({

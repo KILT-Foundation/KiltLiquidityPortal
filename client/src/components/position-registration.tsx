@@ -70,6 +70,7 @@ export function PositionRegistration() {
   const queryClient = useQueryClient();
   const [selectedPositions, setSelectedPositions] = useState<string[]>([]);
   const [showBypassModal, setShowBypassModal] = useState(false);
+  const [registeringPositions, setRegisteringPositions] = useState<Set<string>>(new Set());
 
   // Get user for registration
   const { data: user } = useQuery({
@@ -136,36 +137,48 @@ export function PositionRegistration() {
     mutationFn: async (position: ExternalPosition) => {
       if (!user?.id || !address) throw new Error('User not found');
       
-      const response = await fetch('/api/positions/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          userAddress: address,
-          nftTokenId: position.tokenId,
-          poolAddress: position.poolAddress,
-          token0Address: position.token0Address,
-          token1Address: position.token1Address,
-          amount0: position.amount0 || '0',
-          amount1: position.amount1 || '0',
-          minPrice: position.minPrice,
-          maxPrice: position.maxPrice,
-          liquidity: position.liquidity,
-          currentValueUSD: position.currentValueUSD,
-          feeTier: position.feeTier,
-          originalCreationDate: position.createdAt,
-          // Historical validation data
-          creationBlockNumber: position.creationBlockNumber,
-          creationTransactionHash: position.creationTransactionHash
-        })
-      });
+      // Set loading state for this specific position
+      setRegisteringPositions(prev => new Set(prev).add(position.tokenId));
+      
+      try {
+        const response = await fetch('/api/positions/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            userAddress: address,
+            nftTokenId: position.tokenId,
+            poolAddress: position.poolAddress,
+            token0Address: position.token0Address,
+            token1Address: position.token1Address,
+            amount0: position.amount0 || '0',
+            amount1: position.amount1 || '0',
+            minPrice: position.minPrice,
+            maxPrice: position.maxPrice,
+            liquidity: position.liquidity,
+            currentValueUSD: position.currentValueUSD,
+            feeTier: position.feeTier,
+            originalCreationDate: position.createdAt,
+            // Historical validation data
+            creationBlockNumber: position.creationBlockNumber,
+            creationTransactionHash: position.creationTransactionHash
+          })
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Registration failed');
+        }
+
+        return response.json() as Promise<RegistrationResult>;
+      } finally {
+        // Clear loading state for this position
+        setRegisteringPositions(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(position.tokenId);
+          return newSet;
+        });
       }
-
-      return response.json() as Promise<RegistrationResult>;
     },
     onSuccess: (result) => {
       toast({
@@ -476,10 +489,10 @@ export function PositionRegistration() {
                     {/* Right: Register Button */}
                     <Button
                       onClick={() => handleRegisterPosition(position.tokenId)}
-                      disabled={registerMutation.isPending}
+                      disabled={registeringPositions.has(position.tokenId)}
                       className="bg-gradient-to-r from-[#ff0066] to-[#ff0066] hover:from-[#ff0066] hover:to-[#ff0066] text-white border-0 shadow-lg hover:shadow-[#ff0066]/20 transition-all duration-200 h-7 px-3 text-xs font-medium"
                     >
-                      {registerMutation.isPending ? (
+                      {registeringPositions.has(position.tokenId) ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
                         <Plus className="h-3 w-3" />

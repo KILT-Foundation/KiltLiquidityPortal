@@ -1609,31 +1609,20 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       const startTime = Date.now();
       
       const analytics = await unifiedRewardService.getProgramAnalytics();
-      const treasuryResults = await db.select().from(treasuryConfig).limit(1);
       
-      let analyticsData = analytics;
-      let treasuryConf = treasuryResults[0] || { 
-        totalAllocation: 1500000,
-        programDurationDays: 55 
-      };
-      
-      // Calculate days remaining
-      const totalDays = treasuryConf?.programDurationDays || 55;
-      const daysRemaining = Math.max(0, totalDays - 37); // 37 days since start
-      
+      // Use the dynamic data directly from the service (no more hardcoded fallbacks)
       const finalData = {
         totalLiquidity: analytics.totalLiquidity, // Real pool TVL from DexScreener
         activeLiquidityProviders: analytics.activeLiquidityProviders, // Actual registered users
         totalRewardsDistributed: analytics.totalRewardsDistributed,
-        dailyBudget: analytics.dailyEmissionRate, // Daily KILT emission
+        dailyBudget: analytics.dailyEmissionRate, // Dynamic daily KILT emission from admin config
         programAPR: analytics.programAPR, // Realistic streamlined APR
-        treasuryTotal: analytics.treasuryTotal,
-        treasuryRemaining: analytics.treasuryRemaining,
+        treasuryTotal: analytics.treasuryTotal, // Dynamic treasury total from admin config
+        treasuryRemaining: analytics.treasuryRemaining, // Calculated dynamically
         totalDistributed: analytics.totalDistributed,
-        programDuration: analytics.programDuration,
-        daysRemaining: analytics.daysRemaining !== undefined ? analytics.daysRemaining : daysRemaining,
+        programDuration: analytics.programDuration, // Dynamic program duration from admin config
+        daysRemaining: analytics.daysRemaining, // Calculated dynamically
         totalPositions: analytics.totalPositions, // Real-time registered positions 
-        averagePositionSize: analytics.averagePositionSize, // Actual avg from all KILT/ETH pool LPs
         poolVolume24h: analytics.poolVolume24h, // DexScreener 24h volume
         poolFeeEarnings24h: analytics.poolFeeEarnings24h, // User's total fee earnings
         totalUniqueUsers: analytics.totalUniqueUsers // Actual registered users
@@ -1669,6 +1658,24 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       console.error('Failed to calculate maximum APR:', error);
       res.status(500).json({ 
         error: "Failed to calculate maximum APR", 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
+  // Clear admin configuration cache (called when admin updates configuration)
+  app.post("/api/admin/clear-cache", async (req, res) => {
+    try {
+      unifiedRewardService.clearAdminConfigCache();
+      res.json({ 
+        success: true, 
+        message: "Admin configuration cache cleared",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to clear admin config cache:', error);
+      res.status(500).json({ 
+        error: "Failed to clear admin config cache", 
         details: error instanceof Error ? error.message : 'Unknown error' 
       });
     }
