@@ -226,11 +226,11 @@ function CyberpunkVideoBackground() {
           }}
         >
           <source
-            src="/attached_assets/Untitled design (22)_1752822331413.mp4"
+            src="/assets/Untitled design (22)_1752822331413.mp4"
             type="video/mp4"
           />
           <source
-            src="/attached_assets/678a7b5f9cfe257413b8e490_6798d33994ec593b001fae82_32 Compressed-transcode_1752818424149.mp4"
+            src="/assets/678a7b5f9cfe257413b8e490_6798d33994ec593b001fae82_32 Compressed-transcode_1752818424149.mp4"
             type="video/mp4"
           />
         </video>

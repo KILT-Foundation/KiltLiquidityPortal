@@ -243,7 +243,7 @@ app.use((req, res, next) => {
   // Root path handling will be managed by Vite dev server in development mode
 
   // Serve static files from attached_assets directory
-  app.use('/attached_assets', express.static('attached_assets'));
+  app.use('/assets', express.static('assets'));
 
   // Deployment-ready static file serving: prioritize production build if available
   const path = await import('path');
