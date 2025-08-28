@@ -107,7 +107,6 @@ export class LiquidityService {
       }
 
       // Step 1: Approve tokens
-      const maxUint256 = '115792089237316195423570985008687907853269984665640564039457584007913129639935';
       
       toast({
         title: "Approving Tokens",
@@ -115,14 +114,14 @@ export class LiquidityService {
       });
 
       // Approve KILT
-      const kiltApproved = await approveToken(TOKENS.KILT, maxUint256);
+      const kiltApproved = await approveToken(TOKENS.KILT, params.kiltAmount);
       if (!kiltApproved) {
         throw new Error('Failed to approve KILT token');
       }
 
       // Approve ETH/WETH
       const ethTokenAddress = params.useNativeEth ? TOKENS.ETH : TOKENS.WETH;
-      const ethApproved = await approveToken(ethTokenAddress, maxUint256);
+      const ethApproved = await approveToken(ethTokenAddress, params.ethAmount);
       if (!ethApproved) {
         throw new Error('Failed to approve ETH token');
       }

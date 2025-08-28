@@ -39,7 +39,7 @@ export function useManualDisconnect() {
       try {
         (window as any).phantom.ethereum.disconnect?.();
       } catch (error) {
-        console.log('Phantom disconnect not available');
+        console.warn('Phantom disconnect not available');
       }
     }
     
@@ -51,7 +51,7 @@ export function useManualDisconnect() {
           (window as any).ethereum?.request?.({ method: 'wallet_revokePermissions', params: [{ eth_accounts: {} }] });
         });
       } catch (error) {
-        console.log('MetaMask permission revoke not available');
+        console.warn('MetaMask permission revoke not available');
       }
     }
     
@@ -61,7 +61,7 @@ export function useManualDisconnect() {
   // Prevent auto-reconnection if user manually disconnected
   useEffect(() => {
     if (isConnected && isManuallyDisconnected()) {
-      console.log('Preventing auto-reconnection - user manually disconnected');
+      console.warn('Preventing auto-reconnection - user manually disconnected');
       disconnect();
     }
   }, [isConnected, disconnect]);

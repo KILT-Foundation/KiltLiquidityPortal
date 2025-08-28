@@ -8,7 +8,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import AdminPage from "@/pages/admin";
 import AdminRewards from "@/pages/admin-rewards";
-import { SimpleTest } from "@/components/simple-test";
 
 
 import { useEffect, useRef, useState } from "react";
@@ -97,7 +96,6 @@ function CyberpunkVideoBackground() {
             video.removeEventListener('canplay', handleCanPlay);
             video.removeEventListener('error', handleError);
             // On timeout, show gradient background immediately and continue loading
-            console.log('Video load timeout - showing gradient background');
             setLoadingError(true);
             resolve(true); // Don't reject, just show fallback
           }, 30000); // Extended 30 second timeout for deployment
@@ -106,7 +104,6 @@ function CyberpunkVideoBackground() {
             clearTimeout(timeout);
             video.removeEventListener('canplay', handleCanPlay);
             video.removeEventListener('error', handleError);
-            console.log('Video can play');
             resolve(true);
           };
           
@@ -130,7 +127,6 @@ function CyberpunkVideoBackground() {
           }
           setIsPlaying(true);
           setIsLoaded(true);
-          console.log('Video loading started');
         } catch (playError) {
           console.warn('Video play failed:', playError);
           setLoadingError(true);
@@ -144,7 +140,6 @@ function CyberpunkVideoBackground() {
     // Delayed loading for deployment optimization - let critical app load first
     const delayedLoad = setTimeout(() => {
       setIsLoadingStarted(true);
-      console.log('Starting video load after app initialization...');
       preloadVideo().catch((error) => {
         console.warn('Video preload error caught:', error);
         setLoadingError(true);
@@ -226,7 +221,6 @@ function CyberpunkVideoBackground() {
           }}
           onCanPlay={() => {
             if (!isLoaded) {
-              console.log('Video can play');
               setIsLoaded(true);
             }
           }}
@@ -266,7 +260,6 @@ function App() {
     const checkForRollback = () => {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('cb')) {
-        console.log('Checkpoint rollback detected - clearing React Query cache');
         queryClient.clear();
         queryClient.resetQueries();
         

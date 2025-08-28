@@ -10,7 +10,7 @@ export function EmergencyDebugButton() {
   const runEmergencyCheck = async () => {
     setLoading(true);
     try {
-      console.log('🚨 EMERGENCY: Starting contract verification...');
+      // EMERGENCY: Starting contract verification
       
       const response = await fetch('/api/emergency/verify-contract', {
         method: 'GET',
@@ -21,7 +21,6 @@ export function EmergencyDebugButton() {
       });
       
       const data = await response.json();
-      console.log('🚨 EMERGENCY: Contract verification result:', data);
       
       setResult(data);
     } catch (error) {

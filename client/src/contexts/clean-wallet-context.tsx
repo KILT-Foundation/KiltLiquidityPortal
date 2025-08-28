@@ -51,8 +51,6 @@ export function CleanWalletProvider({ children }: CleanWalletProviderProps) {
       setAddress(userAddress);
       setIsConnected(true);
       
-      console.log('Wallet connected:', userAddress);
-      
       // Check if on Base network
       const chainId = await web3Provider.getNetwork();
       if (Number(chainId.chainId) !== BASE_CHAIN_ID) {
@@ -72,7 +70,6 @@ export function CleanWalletProvider({ children }: CleanWalletProviderProps) {
     setIsConnected(false);
     setProvider(null);
     setSigner(null);
-    console.log('Wallet disconnected');
   };
 
   const switchToBase = async (): Promise<boolean> => {
@@ -125,12 +122,10 @@ export function CleanWalletProvider({ children }: CleanWalletProviderProps) {
           disconnect();
         } else if (accounts[0] !== address) {
           setAddress(accounts[0]);
-          console.log('Account changed to:', accounts[0]);
         }
       };
 
       const handleChainChanged = (chainId: string) => {
-        console.log('Chain changed to:', chainId);
         // Reload the page on network change as recommended by MetaMask
         window.location.reload();
       };

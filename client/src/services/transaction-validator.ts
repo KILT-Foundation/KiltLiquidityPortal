@@ -1,5 +1,5 @@
 import { base } from 'viem/chains';
-import { createPublicClient, http, formatUnits, parseUnits } from 'viem';
+import { createPublicClient, http, formatUnits } from 'viem';
 
 const publicClient = createPublicClient({
   chain: base,
@@ -120,24 +120,10 @@ export class TransactionValidator {
       const token0Balance = await this.getTokenBalance(params.token0, params.userAddress);
       const token1Balance = await this.getTokenBalance(params.token1, params.userAddress);
 
-      console.log('💰 Token Balance Check:', {
-        token0: params.token0,
-        token1: params.token1,
-        token0Balance: formatUnits(token0Balance, 18),
-        token1Balance: formatUnits(token1Balance, 18),
-        amount0Desired: formatUnits(params.amount0Desired, 18),
-        amount1Desired: formatUnits(params.amount1Desired, 18),
-        isNativeETH: params.isNativeETH
-      });
-
       // For native ETH, check ETH balance instead of WETH balance
       if (params.isNativeETH && params.token0.toLowerCase() === '0x4200000000000000000000000000000000000006') {
         // When using native ETH, we check ETH balance but the transaction will handle WETH conversion
         const ethBalance = await publicClient.getBalance({ address: params.userAddress as `0x${string}` });
-        console.log('💰 Native ETH Balance Check:', {
-          ethBalance: formatUnits(ethBalance, 18),
-          amount0Desired: formatUnits(params.amount0Desired, 18)
-        });
         
         if (params.amount0Desired > ethBalance) {
           errors.push(`Insufficient ETH balance. Required: ${formatUnits(params.amount0Desired, 18)}, Available: ${formatUnits(ethBalance, 18)}`);

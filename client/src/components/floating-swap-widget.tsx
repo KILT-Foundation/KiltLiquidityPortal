@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ExternalLink } from 'lucide-react';
+import { ExternalLink, ArrowUpDown } from 'lucide-react';
 import { useWagmiWallet } from '@/hooks/use-wagmi-wallet';
 import { useKiltTokenData } from '@/hooks/use-kilt-data';
+
+// Import centralized token addresses
+import { TOKEN_ADDRESSES } from '@/lib/contracts';
+
 import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
 
 const EthereumLogo = ({ className }: { className?: string }) => (
@@ -23,7 +27,7 @@ export const FloatingSwapWidget = () => {
     const params = new URLSearchParams({
       chain: 'base',
       inputCurrency: 'ETH',
-      outputCurrency: '0x5D0DD05bB095fdD6Af4865A1AdF97c39C85ad2d8', // KILT token
+      outputCurrency: TOKEN_ADDRESSES.KILT, // KILT token
       theme: 'dark'
     });
     

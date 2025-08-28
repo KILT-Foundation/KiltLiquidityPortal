@@ -1,6 +1,5 @@
-import { createPublicClient, createWalletClient, http, parseUnits, formatUnits, getAddress } from 'viem';
+import { createPublicClient, http, parseUnits, formatUnits, getAddress } from 'viem';
 import { base } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
 
 // Uniswap V3 contract addresses on Base
 const UNISWAP_V3_ROUTER = '0x2626664c2603336E57B271c5C0b26F421741e481';

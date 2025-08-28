@@ -176,7 +176,7 @@
     return false;
   }, true);
 
-  console.log('Nuclear overlay suppression activated');
+  console.warn('Nuclear overlay suppression activated');
 })();
 
 export {};

@@ -2,12 +2,12 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useBaseNetwork } from '@/hooks/use-base-network';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, Smartphone, Monitor, ExternalLink, Loader2, CheckCircle, ChevronDown, RefreshCw, LogOut } from 'lucide-react';
+import { Wallet, Smartphone, Monitor, Loader2, ChevronDown, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { MOBILE_WALLET_LINKS, isMobileDevice, openMobileWallet, getRecommendedWallets } from '@/utils/mobile-wallet-links';
+import { openMobileWallet, getRecommendedWallets } from '@/utils/mobile-wallet-links';
 
 
 
@@ -50,9 +50,7 @@ export function MobileWalletConnect() {
           });
         }
       } else if (isMobile && wallet.id !== 'walletConnect') {
-        // Mobile deep link for specific wallets
-        console.log(`Attempting mobile wallet connection: ${wallet.name} (${wallet.id})`);
-        
+
         const success = openMobileWallet(wallet.id);
         setShowModal(false);
         
@@ -176,7 +174,7 @@ export function MobileWalletConnect() {
                     try {
                       (window as any).phantom.ethereum.disconnect?.();
                     } catch (error) {
-                      console.log('Phantom disconnect not available');
+                      console.error('Phantom disconnect not available');
                     }
                   }
                   

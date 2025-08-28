@@ -77,7 +77,7 @@ export function useValidatedPositions(userId: number | undefined) {
 
         // Automatically clean up burned positions from database
         if (burnedPositions.length > 0) {
-          console.log(`🔥 Auto-cleaning ${burnedPositions.length} burned positions from database:`, burnedPositions);
+          console.warn(`🔥 Auto-cleaning ${burnedPositions.length} burned positions from database:`, burnedPositions);
           
           try {
             const cleanupPromises = burnedPositions.map(async (tokenId) => {
@@ -85,7 +85,7 @@ export function useValidatedPositions(userId: number | undefined) {
                 method: 'DELETE'
               });
               if (response.ok) {
-                console.log(`✅ Cleaned up burned position ${tokenId} from database`);
+                console.warn(`✅ Cleaned up burned position ${tokenId} from database`);
                 return tokenId;
               } else {
                 console.warn(`⚠️ Failed to cleanup burned position ${tokenId}`);
@@ -97,7 +97,7 @@ export function useValidatedPositions(userId: number | undefined) {
             const successfulCleanups = cleanedUp.filter(Boolean);
             
             if (successfulCleanups.length > 0) {
-              console.log(`✅ Successfully marked ${successfulCleanups.length} burned positions as inactive`);
+              console.warn(`✅ Successfully marked ${successfulCleanups.length} burned positions as inactive`);
             }
             
             // Invalidate related queries to refresh UI
@@ -106,9 +106,6 @@ export function useValidatedPositions(userId: number | undefined) {
             console.error('Failed to cleanup burned positions:', error);
           }
         }
-
-        console.log(`🔍 Position validation: ${registeredPositions.length} registered, ${blockchainPositions.length} on blockchain, ${validatedPositions.length} validated`);
-        console.log('📋 Validated positions:', validatedPositions.map((p: any) => ({ tokenId: p.nftTokenId, liquidity: p.liquidity, active: p.isActive })));
         
         return validatedPositions;
         

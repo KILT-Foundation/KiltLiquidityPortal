@@ -21,13 +21,11 @@ export function CompleteRemoveLiquidityButton({ tokenId, disabled = false }: Com
   const handleCompleteRemoval = async () => {
     setIsLoading(true);
     try {
-      console.log(`🔄 Step 2: Completing token collection for position ${tokenId}...`);
       
       await collectLiquidity({
         tokenId: tokenId
       });
       
-      console.log(`✅ Step 2 completed: Tokens collected successfully for position ${tokenId}`);
       
       // INSTANT UI UPDATE - Force cache refresh to update position display immediately
       queryClient.invalidateQueries({ queryKey: [`/api/positions/wallet/${address}`] });

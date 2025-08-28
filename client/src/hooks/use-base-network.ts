@@ -13,7 +13,6 @@ export function useBaseNetwork() {
 
   const switchToBase = async () => {
     try {
-      console.log(`🔄 NETWORK FIX: Attempting to switch from chain ${chainId} to Base (${base.id})`);
       
       // First try wagmi's switchChain
       await switchChain({ chainId: base.id });
@@ -23,7 +22,6 @@ export function useBaseNetwork() {
       const newChainIdDecimal = parseInt(newChainId, 16);
       
       if (newChainIdDecimal === base.id) {
-        console.log(`✅ NETWORK FIX: Successfully switched to Base (${base.id})`);
         toast({
           title: "Switched to Base",
           description: "Successfully switched to Base network",
@@ -36,7 +34,6 @@ export function useBaseNetwork() {
       
       // Try direct MetaMask method as fallback
       try {
-        console.log(`🔄 NETWORK FIX: Trying direct MetaMask chain switch...`);
         await window.ethereum?.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: '0x2105' }], // Base chain ID in hex
@@ -50,7 +47,6 @@ export function useBaseNetwork() {
         // If chain doesn't exist, try to add it
         if (switchError.code === 4902) {
           try {
-            console.log(`🔄 NETWORK FIX: Adding Base network to wallet...`);
             await window.ethereum?.request({
               method: 'wallet_addEthereumChain',
               params: [{
@@ -92,7 +88,6 @@ export function useBaseNetwork() {
   // Auto-switch to Base when wallet connects - more aggressive detection
   useEffect(() => {
     if (shouldSwitchToBase && address) {
-      console.log(`🚨 CHAIN MISMATCH DETECTED: User on chain ${chainId}, need Base (${base.id})`);
       
       // Immediate switch attempt
       switchToBase();
@@ -100,7 +95,6 @@ export function useBaseNetwork() {
       // Also set up a backup timer for persistent switching
       const timer = setTimeout(() => {
         if (chainId !== base.id) {
-          console.log(`🚨 PERSISTENT CHAIN ISSUE: Still on wrong chain ${chainId}, retrying...`);
           switchToBase();
         }
       }, 2000);
@@ -112,7 +106,6 @@ export function useBaseNetwork() {
   // Additional effect to monitor chain changes and alert user
   useEffect(() => {
     if (isConnected && chainId !== base.id) {
-      console.log(`⚠️ WRONG NETWORK: Connected to chain ${chainId}, but need Base (${base.id})`);
       
       // Show persistent warning for wrong network
       const warningTimer = setTimeout(() => {

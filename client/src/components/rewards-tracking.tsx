@@ -331,9 +331,7 @@ export function RewardsTracking() {
 
   // Refresh function to reload all rewards data (tab-specific, not whole page)
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    console.log('🔄 Refreshing rewards tab data only...');
-    
+    setIsRefreshing(true);    
     try {
       // Force immediate refetch of all rewards-related data
       const refreshPromises = [];
@@ -518,18 +516,20 @@ export function RewardsTracking() {
                 ? 'Available now'
                 : (rewardStats?.totalAccumulated || 0) > 0
                   ? (claimability?.nextClaimDate ? countdownText || 'Accumulating rewards...' : 'Accumulating rewards...')
-                  : 'Start earning rewards'
+                  : 'No positions registered yet'
               }
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-xs text-[#ff0066] font-medium">
-                {/* CONSISTENT: Always use rewardStats for USD calculations */}
-                {(rewardStats?.totalClaimable || 0) > 0 
-                  ? `≈ $${((rewardStats?.totalClaimable || 0) * (kiltData?.price || 0)).toFixed(2)} USD`
-                  : 'Connect positions to earn'
-                }
-              </div>
-            </div>
+               <div className="text-xs text-[#ff0066] font-medium">
+                 {/* CONSISTENT: Always use rewardStats for USD calculations */}
+                 {(rewardStats?.totalClaimable || 0) > 0 
+                   ? `≈ $${((rewardStats?.totalClaimable || 0) * (kiltData?.price || 0)).toFixed(2)} USD`
+                   : (rewardStats?.totalAccumulated || 0) > 0
+                     ? 'Rewards accumulating (locked)'
+                     : 'Connect positions to earn'
+                 }
+               </div>
+             </div>
             <div className="text-xs text-green-400/80 mt-1">
               Rewards accumulate hourly
             </div>
