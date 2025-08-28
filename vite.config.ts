@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
+  envDir: __dirname, // Read .env from root directory
   plugins: [
     react(),
     runtimeErrorOverlay(),
@@ -22,7 +23,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
-      "@assets": path.resolve(__dirname, "attached_assets"),
+      "@assets": path.resolve(__dirname, "assets"),
     },
   },
   root: path.resolve(__dirname, "client"),
