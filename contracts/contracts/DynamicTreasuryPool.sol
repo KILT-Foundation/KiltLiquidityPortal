@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title DynamicTreasuryPool
@@ -33,6 +33,10 @@ contract DynamicTreasuryPool is Ownable, ReentrancyGuard, Pausable {
     mapping(address => uint256) public claimedAmount;
     mapping(address => uint256) public lastClaimTime;
     
+    // Track all users who have interacted with the contract for complete reset capability
+    address[] public userAddresses;
+    mapping(address => bool) public hasInteracted;
+    
     // Absolute maximum claim per transaction (prevents treasury drainage)
     uint256 public absoluteMaxClaim = 100000 * 10**18; // 100,000 KILT absolute maximum
     
@@ -52,7 +56,7 @@ contract DynamicTreasuryPool is Ownable, ReentrancyGuard, Pausable {
     event ClaimLimitsUpdated(uint256 absoluteMax);
     event ContractPaused();
     event ContractUnpaused();
-    
+    event StatesReset();
     // Modifiers
     modifier validAddress(address addr) {
         require(addr != address(0), "Invalid address");
@@ -154,6 +158,12 @@ contract DynamicTreasuryPool is Ownable, ReentrancyGuard, Pausable {
         nonces[msg.sender] += 1; // Prevent replay attacks
         lastClaimTime[msg.sender] = block.timestamp;
         
+        // Track user for reset capability
+        if (!hasInteracted[msg.sender]) {
+            hasInteracted[msg.sender] = true;
+            userAddresses.push(msg.sender);
+        }
+        
         // Transfer KILT tokens to user using SafeERC20
         kiltToken.safeTransfer(msg.sender, totalRewardBalance);
         
@@ -185,6 +195,12 @@ contract DynamicTreasuryPool is Ownable, ReentrancyGuard, Pausable {
         uint256 currentNonce = nonces[user];
         nonces[user] += 1;
         lastClaimTime[user] = block.timestamp;
+        
+        // Track user for reset capability
+        if (!hasInteracted[user]) {
+            hasInteracted[user] = true;
+            userAddresses.push(user);
+        }
         
         // Transfer KILT tokens to user using SafeERC20
         kiltToken.safeTransfer(user, totalRewardBalance);
@@ -247,6 +263,34 @@ contract DynamicTreasuryPool is Ownable, ReentrancyGuard, Pausable {
         kiltToken.safeTransfer(owner(), withdrawAmount);
         
         emit TreasuryWithdraw(withdrawAmount);
+    }
+    
+    /**
+     * @dev Reset all contract states to initial values (owner only)
+     * WARNING: This will clear all user data, claims history, and analytics
+     * Use only in emergency situations or for testing
+     */
+    function resetAllStates() external onlyOwner {
+
+        totalClaimsProcessed = 0;
+        totalAmountClaimed = 0;
+        
+        // Reset all user states
+        uint256 userCount = userAddresses.length;
+        for (uint256 i = 0; i < userCount; i++) {
+            address user = userAddresses[i];
+            if (hasInteracted[user]) {
+                claimedAmount[user] = 0;
+                lastClaimTime[user] = 0;
+                nonces[user] = 0;
+                hasInteracted[user] = false;
+            }
+        }
+        
+        // Clear the user addresses array
+        delete userAddresses;
+        
+        emit StatesReset();
     }
     
     /**
