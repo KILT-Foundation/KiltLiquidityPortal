@@ -6,7 +6,7 @@ import { useToast } from './use-toast';
 import { useWalletClient } from 'wagmi';
 
 // Enhanced DynamicTreasuryPool contract address on Base network - DEPLOYED!
-const DYNAMIC_TREASURY_POOL_ADDRESS = '0x09bcB93e7E2FF067232d83f5e7a7E8360A458175' as const;
+const DYNAMIC_TREASURY_POOL_ADDRESS = '0x09a9a3adDD0DEC4769c2244A00D9eF5473Ddefff' as const;
 
 // Enhanced DynamicTreasuryPool contract ABI with security features for reward claiming
 const DYNAMIC_TREASURY_POOL_ABI = [
@@ -160,6 +160,15 @@ export function useRewardClaiming() {
         throw new Error('Wallet not connected');
       }
 
+      try {
+        await walletClient.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x2105' }], // Base chain ID in hex
+        });
+      } catch (manualError) {
+        console.error('network switch failed:', manualError);
+      }
+      
       const claimabilityResponse = await fetch(`/api/rewards/claimability/${address}`);
       
       if (!claimabilityResponse.ok) {
