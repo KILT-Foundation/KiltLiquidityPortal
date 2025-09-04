@@ -1,5 +1,5 @@
 # Production CI/CD Pipeline
-name: Deploy to Production
+name: Lint and Build
 
 on:
   push:

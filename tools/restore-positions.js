@@ -2,7 +2,7 @@
 
 // Quick script to restore the missing positions that are active on blockchain but missing from database
 
-const { PositionRegistrationService } = require('./server/position-registration-service.js');
+const { PositionRegistrationService } = require('../server/position-registration-service.js');
 
 async function restorePositions() {
   console.log('🔧 Restoring missing positions...');

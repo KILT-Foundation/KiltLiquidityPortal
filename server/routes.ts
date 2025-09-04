@@ -3748,7 +3748,7 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       
       // Validate required fields - check for valid values (support both field names)
       const validationErrors = [];
-      const smartContractAddr = config.smartContractAddress || config.treasuryWalletAddress;
+      const smartContractAddr = config.treasuryWalletAddress;
       if (!smartContractAddr || smartContractAddr.trim() === '') {
         validationErrors.push('Smart contract address is required');
       }
