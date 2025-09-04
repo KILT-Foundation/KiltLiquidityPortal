@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useWagmiWallet } from "@/hooks/use-wagmi-wallet";
 import { apiRequest } from "@/lib/queryClient";
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseUnits } from 'viem';
 import { Slider } from "@/components/ui/slider";
 import { 
@@ -113,6 +113,14 @@ export function SmartContractPanel() {
     writeContract: transferKilt 
   } = useWriteContract();
 
+  const { 
+    data : owner
+  } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: DYNAMIC_TREASURY_POOL_ABI,
+    functionName: 'owner',
+  });
+
   const { isLoading: approveConfirming, isSuccess: approveSuccess } = useWaitForTransactionReceipt({
     hash: approveHash,
   });
@@ -146,7 +154,7 @@ export function SmartContractPanel() {
   });
 
   // Check if user is authorized admin (either contract owner or additional admin)
-  const isOwner = isAuthorizedAdmin;
+  const isOwner = address === owner;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -892,11 +900,15 @@ export function SmartContractPanel() {
             <div className="mt-4 text-sm text-gray-400 space-y-2">
               <div className="bg-gray-900/50 p-3 rounded border border-red-400/30">
                 <p className="text-red-400 font-semibold">Smart Contract Owner Only:</p>
-                <p className="font-mono text-xs">• 0xAFff1831e663B6F29fb90871Ea8518e8f8B3b71a</p>
+                <p className="font-mono text-xs">• {owner}</p>
               </div>
               <div className="bg-gray-900/50 p-3 rounded border border-blue-400/30">
                 <p className="text-blue-400 font-semibold">Admin Panel Access (Non-Owner):</p>
-                <p className="font-mono text-xs">• 0x5bF25Dc1BAf6A96C5A0F724E05EcF4D456c7652e</p>
+                <p className="font-mono text-xs">
+                  {authorizedAdmins.map((admin) => (
+                    <p key={admin}>• {admin}</p>
+                  ))}
+                </p>
               </div>
               <div className="bg-gray-900/50 p-3 rounded border border-green-400/30">
                 <p className="text-green-400 font-semibold">Your Connected Wallet:</p>
