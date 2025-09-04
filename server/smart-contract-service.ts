@@ -459,6 +459,10 @@ export class SmartContractService {
     console.log('🔐 SERVER LOG 2: User address:', userAddress);
     console.log('🔐 SERVER LOG 3: Amount requested:', amount || 'Auto-calculated', 'KILT');
     
+    await this.initializeContracts().catch(error => {
+      console.error('Failed to initialize contracts:', error);
+      this.isContractDeployed = false;
+    });
     // If amount not provided, calculate user's full claimable amount
     if (!amount || amount <= 0) {
       console.log('🔐 SERVER LOG 3.1: Getting user claimable amount from API...');

@@ -207,8 +207,10 @@ export const NETWORK_CONFIG = {
 
 // Authorized admin addresses for smart contract operations
 export const AUTHORIZED_ADMINS = [
-  "0xAFff1831e663B6F29fb90871Ea8518e8f8B3b71a", // Contract owner (deployer)
-  "0x5bF25Dc1BAf6A96C5A0F724E05EcF4D456c7652e"  // Additional admin wallet
+  '0x5bF25Dc1BAf6A96C5A0F724E05EcF4D456c7652e',
+  '0x861722f739539CF31d86F1221460Fa96C9baB95C',
+  '0xAFff1831e663B6F29fb90871Ea8518e8f8B3b71a',  // Contract owner wallet
+  '0xD117738595dfAFe4c2f96bcF63Ed381788E08d39'   // User-requested admin access
 ] as const;
 
 // Legacy constants for backward compatibility
