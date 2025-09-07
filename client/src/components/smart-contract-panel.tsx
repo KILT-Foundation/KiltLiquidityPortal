@@ -915,7 +915,7 @@ export function SmartContractPanel() {
                 <p className="font-mono text-xs">• {address}</p>
               </div>
               <div className="text-xs text-yellow-400 mt-3 bg-yellow-400/10 p-2 rounded">
-                <strong>Note:</strong> To fund the contract, connect with wallet 0xAFf...71a
+                <strong>Note:</strong> To fund the contract, connect with wallet {owner?.slice(0, 6)}...{owner?.slice(-4)}
               </div>
             </div>
           </CardContent>
