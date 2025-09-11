@@ -97,10 +97,19 @@ export function AnalyticsTab() {
   // Calculate aggregate statistics
   const totalPositions = positionAnalytics.length;
   const activePositions = positionAnalytics.filter(p => p.isActive).length;
-  const averageTimeBonus = activePositions > 0 
-    ? positionAnalytics.filter(p => p.isActive).reduce((sum, p) => sum + p.timeBonus, 0) / activePositions 
+  
+  // Calculate weighted average time bonus based on position size
+  const activePositionsData = positionAnalytics.filter(p => p.isActive);
+  const totalValueUSD = activePositionsData.reduce((sum, p) => sum + p.currentValueUSD, 0);
+  
+  const weightedAverageTimeBonus = totalValueUSD > 0 
+    ? activePositionsData.reduce((sum, p) => sum + (p.timeBonus * p.currentValueUSD), 0) / totalValueUSD
     : 0;
-  const totalValueUSD = positionAnalytics.filter(p => p.isActive).reduce((sum, p) => sum + p.currentValueUSD, 0);
+  
+  // Also calculate simple average for comparison
+  const simpleAverageTimeBonus = activePositions > 0 
+    ? activePositionsData.reduce((sum, p) => sum + p.timeBonus, 0) / activePositions 
+    : 0;
 
   if (isLoading || !programSettings || !treasuryConfig) {
     return (
@@ -131,12 +140,29 @@ export function AnalyticsTab() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span className="text-white/70 text-sm">Avg Time Bonus</span>
+              <span className="text-white/70 text-sm">Weighted Time Bonus Average</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-white/50 hover:text-white/70" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-xs max-w-xs">
+                      <div className="font-semibold mb-1">Weighted Average</div>
+                      <div>Larger positions have more influence</div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-            <div className="text-white text-xl font-bold">
-              {averageTimeBonus > 0 ? `${averageTimeBonus.toFixed(2)}x` : '--'}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-400 text-sm">Weighted Average:</span>
+                <span className="text-white font-bold">
+                  {weightedAverageTimeBonus > 0 ? `${weightedAverageTimeBonus.toFixed(2)}x` : '--'}
+                </span>
+              </div>
             </div>
-            <div className="text-white/50 text-xs">Current average</div>
           </CardContent>
         </Card>
 
@@ -164,6 +190,54 @@ export function AnalyticsTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Time Bonus Distribution Analysis */}
+      {activePositionsData.length > 0 && (
+        <Card className="bg-black/40 backdrop-blur-xl border border-white/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Calculator className="h-5 w-5 text-blue-400" />
+              Time Bonus Distribution Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> */}
+              {/* Weighted vs Simple Average Comparison */}
+              <div className="space-y-4">
+                <div className="text-white/90 font-medium">Average Comparison</div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-emerald-400/10 border border-emerald-400/30 rounded-lg">
+                    <div>
+                      <div className="text-emerald-400 font-semibold">Weighted Average</div>
+                      <div className="text-white/70 text-sm">Based on position size</div>
+                    </div>
+                    <div className="text-emerald-400 text-xl font-bold">
+                      {weightedAverageTimeBonus.toFixed(2)}x
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-blue-400/10 border border-blue-400/30 rounded-lg">
+                    <div>
+                      <div className="text-blue-400 font-semibold">Simple Average</div>
+                      <div className="text-white/70 text-sm">Equal weight per position</div>
+                    </div>
+                    <div className="text-blue-400 text-xl font-bold">
+                      {simpleAverageTimeBonus.toFixed(2)}x
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/* </div> */}
+            
+            <div className="mt-4 p-3 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 border border-white/10 rounded-lg">
+              <div className="text-white/90 text-sm">
+                <strong>💡 Why Weighted Average Matters:</strong> The weighted average gives a more accurate representation 
+                of the overall time bonus across your portfolio, as larger positions contribute more to your total rewards.
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Position Analytics */}
       <Card className="bg-black/40 backdrop-blur-xl border border-white/10">
@@ -212,7 +286,7 @@ export function AnalyticsTab() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
                       <div className="text-white/70 text-sm">Position Age</div>
                       <div className="text-white font-semibold">
@@ -253,6 +327,31 @@ export function AnalyticsTab() {
                       <div className="text-white/70 text-sm">Position Value</div>
                       <div className="text-white font-semibold">
                         ${position.currentValueUSD.toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-white/70 text-sm flex items-center gap-1">
+                        Weighting
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Info className="h-3 w-3 text-white/50 hover:text-white/70" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs max-w-xs">
+                                <div className="font-semibold mb-1">Position Weighting</div>
+                                <div>Larger positions contribute more to the Weighted Average Time Bonus calculation.</div>
+                                <div className="mt-1 pt-1 border-t border-white/20">
+                                  Weight = Position Value / Total Portfolio Value
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <div className="text-white font-semibold">
+                        {totalValueUSD > 0 ? ((position.currentValueUSD / totalValueUSD) * 100).toFixed(1) : 0}%
                       </div>
                     </div>
                   </div>
