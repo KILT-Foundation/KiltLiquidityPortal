@@ -187,7 +187,7 @@ export function CyberpunkAdminPanel() {
   });
 
   // Load existing treasury configuration with forced refresh
-  const { data: existingTreasuryConfig, isLoading: treasuryLoading } = useQuery({
+  const { data: existingTreasuryConfig, isLoading: treasuryLoading } = useQuery<TreasuryConfig>({
     queryKey: ['/api/admin/treasury/config'],
     staleTime: 0,
     gcTime: 0,
@@ -196,7 +196,7 @@ export function CyberpunkAdminPanel() {
   });
 
   // Load existing program settings
-  const { data: existingProgramSettings, isLoading: settingsLoading } = useQuery({
+  const { data: existingProgramSettings, isLoading: settingsLoading } = useQuery<ProgramSettings>({
     queryKey: ['/api/admin/program/settings'],
   });
 
@@ -462,11 +462,29 @@ export function CyberpunkAdminPanel() {
                   <div className="space-y-2">
                     <div className="text-green-400 font-mono">MULTIPLIERS:</div>
                     <div className="text-gray-300 space-y-1 font-mono">
-                      <div>b_time = Time boost coefficient</div>
+                      <div>b_time = Time boost coefficient (0.6) → Max 1.6x</div>
                       <div>IRM = In-range multiplier (0.7-1.0)</div>
-                      <div>FRB = Full range bonus multiplier</div>
+                      <div>FRB = Full range bonus multiplier (1.2x)</div>
                       <div>R/P = Daily reward budget allocation</div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Time Bonus Formula */}
+              <div className="bg-black/50 border border-green-400 rounded p-6">
+                <h2 className="text-lg font-bold text-[#ff0066] mb-4 tracking-wider">
+                  [TIME_BONUS_FORMULA]
+                </h2>
+                <div className="bg-gray-900/50 border border-green-400/30 rounded p-4 font-mono text-sm">
+                  <div className="text-green-400 mb-2">TIME BONUS CALCULATION:</div>
+                  <div className="text-white mb-2">Time Bonus = 1 + ((D_u / P) × b_time)</div>
+                  <div className="text-gray-300 space-y-1 text-xs">
+                    <div>• D_u = Days position has been active</div>
+                    <div>• P = Program duration ({(existingTreasuryConfig as any)?.programDurationDays || 365} days)</div>
+                    <div>• b_time = Time boost coefficient ({programSettings.timeBoostCoefficient || 0.6})</div>
+                    <div>• Maximum time bonus: {(1 + (programSettings.timeBoostCoefficient || 0.6)).toFixed(1)}x (reached after {(existingTreasuryConfig as any)?.programDurationDays || 365} days)</div>
+                    <div>• Example: 30 days active → 1 + ((30/{(existingTreasuryConfig as any)?.programDurationDays || 365}) × {programSettings.timeBoostCoefficient || 0.6}) = {(1 + ((30 / ((existingTreasuryConfig as any)?.programDurationDays || 365)) * (programSettings.timeBoostCoefficient || 0.6))).toFixed(3)}x</div>
                   </div>
                 </div>
               </div>

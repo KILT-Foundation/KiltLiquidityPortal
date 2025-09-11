@@ -18,7 +18,8 @@ import {
   ExternalLink,
   BarChart3,
   TrendingUp as ChartIcon,
-  ShoppingCart // Add this import
+  ShoppingCart,
+  Calculator
 } from 'lucide-react';
 
 // Lazy-loaded components for faster initial load
@@ -48,6 +49,7 @@ import { useWalletClient } from 'wagmi';
 const LiquidityMint = lazy(() => import('./liquidity-mint').then(m => ({ default: m.LiquidityMint })));
 const RewardsTracking = lazy(() => import('./rewards-tracking').then(m => ({ default: m.RewardsTracking })));
 const UserPositions = lazy(() => import('./user-positions').then(m => ({ default: m.UserPositions })));
+const AnalyticsTab = lazy(() => import('./analytics-tab').then(m => ({ default: m.AnalyticsTab })));
 
 
 // Removed tab loading spinner - using built-in loading states
@@ -637,7 +639,7 @@ export function MainDashboard() {
             }
           }
         }} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-black/40 backdrop-blur-xl border border-white/10 p-1 rounded-2xl mb-6 sm:mb-8 h-10 sm:h-12 gap-1 shadow-2xl">
+          <TabsList className="grid w-full grid-cols-6 bg-black/40 backdrop-blur-xl border border-white/10 p-1 rounded-2xl mb-6 sm:mb-8 h-10 sm:h-12 gap-1 shadow-2xl">
             <TabsTrigger 
               value="overview" 
               className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/15 data-[state=active]:to-white/10 data-[state=active]:text-white data-[state=active]:shadow-lg text-white/70 hover:text-white/90 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-center min-w-0 hover:bg-white/5 group"
@@ -670,6 +672,16 @@ export function MainDashboard() {
               <span className="text-xs sm:text-sm font-medium">
                 <span className="sm:hidden">Positions</span>
                 <span className="hidden sm:inline">Positions</span>
+              </span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              className="mobile-tab-trigger data-[state=active]:bg-gradient-to-r data-[state=active]:from-white/15 data-[state=active]:to-white/10 data-[state=active]:text-white data-[state=active]:shadow-lg text-white/70 hover:text-white/90 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-center min-w-0 hover:bg-white/5 group"
+            >
+              <Calculator className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0 transition-colors duration-300 group-data-[state=active]:text-white group-hover:text-[#ff0066]" />
+              <span className="text-xs sm:text-sm font-medium">
+                <span className="sm:hidden">Analytics</span>
+                <span className="hidden sm:inline">Analytics</span>
               </span>
             </TabsTrigger>
             <button
@@ -1069,6 +1081,13 @@ export function MainDashboard() {
           <TabsContent value="positions">
             <Suspense fallback={<OptimizedLoadingFallback height="400px" />}>
               <UserPositions />
+            </Suspense>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics">
+            <Suspense fallback={<OptimizedLoadingFallback height="600px" />}>
+              <AnalyticsTab />
             </Suspense>
           </TabsContent>
           
