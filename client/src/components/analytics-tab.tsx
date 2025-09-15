@@ -140,8 +140,8 @@ export function AnalyticsTab() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span className="text-white/70 text-sm">Weighted Time Bonus Average</span>
-              <TooltipProvider>
+              <span className="text-white/70 text-sm">Time Bonus</span>
+              {/* <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
                     <Info className="h-3 w-3 text-white/50 hover:text-white/70" />
@@ -153,13 +153,21 @@ export function AnalyticsTab() {
                     </div>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
+              </TooltipProvider> */}
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-emerald-400 text-sm">Weighted Average:</span>
                 <span className="text-white font-bold">
                   {weightedAverageTimeBonus > 0 ? `${weightedAverageTimeBonus.toFixed(2)}x` : '--'}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-400 text-sm">Simple Average:</span>
+                <span className="text-white font-bold">
+                  {simpleAverageTimeBonus > 0 ? `${simpleAverageTimeBonus.toFixed(2)}x` : '--'}
                 </span>
               </div>
             </div>
@@ -190,54 +198,6 @@ export function AnalyticsTab() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Time Bonus Distribution Analysis */}
-      {activePositionsData.length > 0 && (
-        <Card className="bg-black/40 backdrop-blur-xl border border-white/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Calculator className="h-5 w-5 text-blue-400" />
-              Time Bonus Distribution Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> */}
-              {/* Weighted vs Simple Average Comparison */}
-              <div className="space-y-4">
-                <div className="text-white/90 font-medium">Average Comparison</div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-emerald-400/10 border border-emerald-400/30 rounded-lg">
-                    <div>
-                      <div className="text-emerald-400 font-semibold">Weighted Average</div>
-                      <div className="text-white/70 text-sm">Based on position size</div>
-                    </div>
-                    <div className="text-emerald-400 text-xl font-bold">
-                      {weightedAverageTimeBonus.toFixed(2)}x
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-blue-400/10 border border-blue-400/30 rounded-lg">
-                    <div>
-                      <div className="text-blue-400 font-semibold">Simple Average</div>
-                      <div className="text-white/70 text-sm">Equal weight per position</div>
-                    </div>
-                    <div className="text-blue-400 text-xl font-bold">
-                      {simpleAverageTimeBonus.toFixed(2)}x
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {/* </div> */}
-            
-            <div className="mt-4 p-3 bg-gradient-to-r from-blue-400/10 to-emerald-400/10 border border-white/10 rounded-lg">
-              <div className="text-white/90 text-sm">
-                <strong>💡 Why Weighted Average Matters:</strong> The weighted average gives a more accurate representation 
-                of the overall time bonus across your portfolio, as larger positions contribute more to your total rewards.
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Position Analytics */}
       <Card className="bg-black/40 backdrop-blur-xl border border-white/10">

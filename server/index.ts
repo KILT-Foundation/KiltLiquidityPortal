@@ -8,6 +8,7 @@ import { enhancedErrorHandler } from "./error-handler";
 import { kiltPriceService } from "./kilt-price-service.js";
 import { blockchainConfigService } from "./blockchain-config-service";
 import { unifiedRewardService } from "./unified-reward-service";
+import { cronScheduler } from "./cron-scheduler";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
@@ -307,6 +308,14 @@ app.use((req, res, next) => {
     }, async () => {
       log(`serving on port ${port}`);
       console.log('✓ Server services initialized successfully');
+      
+      // Start cron scheduler for automated reward accrual
+      try {
+        cronScheduler.start();
+        console.log('⏰ Cron scheduler started - reward accrual will run automatically');
+      } catch (error) {
+        console.error('❌ Failed to start cron scheduler:', error);
+      }
     });
 
   } catch (error) {

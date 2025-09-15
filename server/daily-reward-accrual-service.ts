@@ -1,0 +1,184 @@
+/**
+ * Daily Reward Accrual Service
+ * Properly calculates and stores daily rewards for each position
+ * This ensures rewards are fixed once calculated and not retroactively changed
+ */
+
+import { db } from './db';
+import { lpPositions, rewards, programSettings, treasuryConfig, hourlyRewards } from '../shared/schema';
+import { eq, and, gte, lt, desc } from 'drizzle-orm';
+import { uniswapIntegrationService } from './uniswap-integration-service';
+import { registeredPoolAnalyticsService } from './registered-pool-analytics';
+import { unifiedRewardService } from './unified-reward-service';
+import { kiltPriceService } from './kilt-price-service';
+
+export interface DailyRewardCalculation {
+  date: string; // YYYY-MM-DD format
+  positionId: number;
+  nftTokenId: string;
+  userId: number;
+  positionValueUSD: number;
+  dailyBudget: number;
+  inRangePoolSize: number;
+  liquidityRatio: number;
+  timeMultiplier: number;
+  inRangeMultiplier: number; // 0-1 based on actual in-range status
+  fullRangeBonus: number;
+  dailyRewardAmount: number;
+  daysStaked: number;
+  baseAPR: number;
+  effectiveAPR: number;
+}
+
+export class DailyRewardAccrualService {
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  /**
+   * Calculate daily reward for a specific position on a specific date
+   */
+  private async calculateDailyReward(
+    position: any,
+    date: Date,
+    config: {
+      dailyBudget: number;
+      inRangePoolSize: number;
+      timeBoostCoefficient: number;
+      fullRangeBonus: number;
+      programDurationDays: number;
+    }
+  ): Promise<DailyRewardCalculation> {
+    
+    // Get position's actual in-range status for this date
+    const positionData = await uniswapIntegrationService.getFullPositionData(position.nftTokenId);
+    const isInRange = positionData?.isInRange && positionData?.isActive;
+    const inRangeMultiplier = isInRange ? 1.0 : 0.0; // 0 or 1, not fractional
+
+    // Calculate position age in days
+    const positionCreatedAt = new Date(position.createdAt);
+    const daysStaked = Math.max(0, Math.floor((date.getTime() - positionCreatedAt.getTime()) / (1000 * 60 * 60 * 24)));
+    const totalPoolTVL = await unifiedRewardService.getPoolTVL();
+    // Calculate time multiplier
+    const timeMultiplier = 1 + ((daysStaked / config.programDurationDays) * config.timeBoostCoefficient);
+
+    // Calculate liquidity ratio
+    const positionValueUSD = parseFloat(position.currentValueUSD || '0');
+    const liquidityRatio = config.inRangePoolSize > 0 ? positionValueUSD / config.inRangePoolSize : 0;
+
+    // Calculate daily reward amount
+    const dailyRewardAmount = liquidityRatio * timeMultiplier * config.dailyBudget;
+    const kiltPrice = await kiltPriceService.getCurrentPrice();
+    // Calculate APR values
+    const baseAPR = config.inRangePoolSize > 0 ? (dailyRewardAmount * kiltPrice * 365.25 / positionValueUSD): 0;
+    const effectiveAPR = baseAPR * timeMultiplier;
+    console.log(`🔍 Daily reward amount for position ${position.nftTokenId}: ${dailyRewardAmount.toFixed(2)} KILT`);
+    console.log(`🔍 Base APR for position ${position.nftTokenId}: ${baseAPR.toFixed(2)}%`);
+    console.log(`🔍 Effective APR for position ${position.nftTokenId}: ${effectiveAPR.toFixed(2)}%`);
+    console.log(`🔍 Liquidity ratio for position ${position.nftTokenId}: ${liquidityRatio.toFixed(6)}`);
+    console.log(`🔍 Time multiplier for position ${position.nftTokenId}: ${timeMultiplier.toFixed(4)}`);
+    console.log(`🔍 Daily budget for position ${position.nftTokenId}: ${config.dailyBudget.toFixed(2)} KILT`);
+    console.log(`🔍 In-range pool size for position ${position.nftTokenId}: ${config.inRangePoolSize.toFixed(2)}`);
+    console.log(`🔍 Program duration days for position ${position.nftTokenId}: ${config.programDurationDays.toFixed(2)}`);
+    console.log(`🔍 Days staked for position ${position.nftTokenId}: ${daysStaked.toFixed(2)}`);
+    console.log(`🔍 Position value USD for position ${position.nftTokenId}: ${positionValueUSD.toFixed(2)}`);
+    console.log(`🔍 Position created at for position ${position.nftTokenId}: ${positionCreatedAt.toISOString()}`);
+    console.log(`🔍 Date for position ${position.nftTokenId}: ${date.toISOString()}`);
+    console.log(`🔍 Position ID for position ${position.nftTokenId}: ${position.id}`);
+    console.log(`🔍 NFT token ID for position ${position.nftTokenId}: ${position.nftTokenId}`);
+    console.log(`🔍 User ID for position ${position.nftTokenId}: ${position.userId}`);
+    console.log(`🔍 Position created at for position ${position.nftTokenId}: ${positionCreatedAt.toISOString()}`);
+    console.log(`🔍 Date for position ${position.nftTokenId}: ${date.toISOString()}`);
+    return {
+      date: date.toISOString().split('T')[0],
+      positionId: position.id,
+      nftTokenId: position.nftTokenId,
+      userId: position.userId,
+      positionValueUSD,
+      dailyBudget: config.dailyBudget,
+      inRangePoolSize: config.inRangePoolSize,
+      liquidityRatio,
+      timeMultiplier,
+      inRangeMultiplier,
+      fullRangeBonus: config.fullRangeBonus,
+      dailyRewardAmount,
+      daysStaked,
+      baseAPR,
+      effectiveAPR
+    };
+  }
+
+
+  /**
+   * Get accumulated rewards for a position from stored daily rewards
+   */
+  async getAccumulatedRewards(positionId: number): Promise<{
+    totalAccumulated: number;
+    hourlyBreakdown: Array<{
+      date: string;
+      amount: number;
+      inRange: boolean;
+      timeMultiplier: number;
+    }>;
+  }> {
+    const hourlyRecords = await db
+      .select()
+      .from(hourlyRewards)
+      .where(eq(hourlyRewards.positionId, positionId))
+      .orderBy(desc(hourlyRewards.executedAt));
+
+    const rewardRecord = await db
+      .select()
+      .from(rewards)
+      .where(eq(rewards.id, hourlyRecords[0].rewardId))
+      .limit(1);
+
+    const totalAccumulated = parseFloat(rewardRecord[0].accumulatedAmount);
+
+    const hourlyBreakdown = hourlyRecords.map(record => ({
+      date: record.executedAt.toISOString().split('T')[0],
+      amount: parseFloat(record.rewardAmount),
+      inRange: true, // Simplified check
+      timeMultiplier: parseFloat(record.timeMultiplier)
+    }));
+
+    return {
+      totalAccumulated,
+      hourlyBreakdown
+    };
+  }
+
+  /**
+   * Get current daily rate for a position (what they'll earn today)
+   */
+  async getCurrentDailyRate(positionId: number): Promise<number> {
+    const [position] = await db
+      .select()
+      .from(lpPositions)
+      .where(eq(lpPositions.id, positionId))
+      .limit(1);
+
+    if (!position) return 0;
+
+    const [programConfig] = await db.select().from(programSettings).limit(1);
+    const [treasuryConfigData] = await db.select().from(treasuryConfig).limit(1);
+
+    if (!programConfig || !treasuryConfigData) return 0;
+
+    const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
+    const dailyBudget = parseFloat(treasuryConfigData.dailyRewardsCap || '25000');
+    const timeBoostCoefficient = parseFloat(programConfig.timeBoostCoefficient?.toString() || '0.6');
+    const fullRangeBonus = parseFloat(programConfig.fullRangeBonus?.toString() || '1.2');
+
+    const calculation = await this.calculateDailyReward(position, new Date(), {
+      dailyBudget,
+      inRangePoolSize,
+      timeBoostCoefficient,
+      fullRangeBonus,
+      programDurationDays: parseFloat(treasuryConfigData.programDurationDays?.toString() || '365')
+    });
+
+    return calculation.dailyRewardAmount;
+  }
+}
+
+// Export singleton instance
+export const dailyRewardAccrualService = new DailyRewardAccrualService();

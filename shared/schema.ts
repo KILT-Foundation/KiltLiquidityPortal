@@ -49,7 +49,7 @@ export const lpPositions = pgTable("lp_positions", {
   appSessionId: text("app_session_id").notNull(),
   verificationStatus: text("verification_status").default("pending").notNull(),
   rewardEligible: boolean("reward_eligible").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // KILT treasury reward system with Top 100 ranking
@@ -58,11 +58,11 @@ export const rewards = pgTable("rewards", {
   userId: integer("user_id").references(() => users.id),
   positionId: integer("position_id").references(() => lpPositions.id),
   nftTokenId: text("nft_token_id").notNull(), // Uniswap V3 NFT token ID
-  amount: decimal("amount", { precision: 18, scale: 8 }).notNull(), // Total reward amount - required field
-  positionValueUSD: decimal("position_value_usd", { precision: 20, scale: 8 }).notNull(),
-  dailyRewardAmount: decimal("daily_reward_amount", { precision: 18, scale: 8 }).notNull(),
-  accumulatedAmount: decimal("accumulated_amount", { precision: 18, scale: 8 }).notNull(),
-  claimedAmount: decimal("claimed_amount", { precision: 18, scale: 8 }).default("0"),
+  amount: decimal("amount", { precision: 30, scale: 8 }).notNull(), // Total reward amount - required field
+  positionValueUSD: decimal("position_value_usd", { precision: 30, scale: 8 }).notNull(),
+  dailyRewardAmount: decimal("daily_reward_amount", { precision: 30, scale: 8 }).notNull(),
+  accumulatedAmount: decimal("accumulated_amount", { precision: 30, scale: 8 }).notNull(),
+  claimedAmount: decimal("claimed_amount", { precision: 30, scale: 8 }).default("0"),
   liquidityAddedAt: timestamp("liquidity_added_at").notNull(), // When liquidity was first added to pool
   stakingStartDate: timestamp("staking_start_date").defaultNow().notNull(), // When NFT staking for rewards started
   lastRewardCalculation: timestamp("last_reward_calculation").defaultNow().notNull(),
@@ -85,24 +85,56 @@ export const poolStats = pgTable("pool_stats", {
 
 
 
-// Daily reward tracking table
-export const dailyRewards = pgTable("daily_rewards", {
+
+// Hourly snapshot metadata and rewards (randomized within each hour)
+export const hourlySnapshots = pgTable("hourly_snapshots", {
   id: serial("id").primaryKey(),
-  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  positionId: integer("position_id").references(() => lpPositions.id).notNull(),
+  // YYYY-MM-DD for day grouping
   date: date("date").notNull(),
-  positionValueUSD: decimal("position_value_usd", { precision: 20, scale: 8 }).notNull(),
-  baseAPR: decimal("base_apr", { precision: 5, scale: 2 }).notNull(),
-  timeMultiplier: decimal("time_multiplier", { precision: 5, scale: 2 }).notNull(),
-  sizeMultiplier: decimal("size_multiplier", { precision: 5, scale: 2 }).notNull(),
-  effectiveAPR: decimal("effective_apr", { precision: 5, scale: 2 }).notNull(),
-  dailyRewardAmount: decimal("daily_reward_amount", { precision: 18, scale: 8 }).notNull(),
-  daysStaked: integer("days_staked").notNull(),
+  // 1-24 snap number within the day
+  snapNumber: integer("snap_number").notNull(),
+  // Timestamp the snapshot actually executed
+  executedAt: timestamp("executed_at").notNull(),
+  // Minutes since last snapshot (H_mins)
+  minutesSinceLast: integer("minutes_since_last").notNull(),
+  // Allocation for this snapshot in KILT after time-weighting
+  allocatedBudgetKilt: decimal("allocated_budget_kilt", { precision: 30, scale: 8 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  uniqueUserPositionDate: unique().on(table.userId, table.positionId, table.date),
+  uniqueDaySnap: unique().on(table.date, table.snapNumber),
 }));
+
+export const hourlyRewards = pgTable("hourly_rewards", {
+  id: serial("id").primaryKey(),
+  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
+  snapshotId: integer("snapshot_id").references(() => hourlySnapshots.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  positionId: integer("position_id").references(() => lpPositions.id).notNull(),
+  nftTokenId: text("nft_token_id").notNull(),
+  // NRC applied amount for this snapshot (in KILT)
+  rewardAmount: decimal("reward_amount", { precision: 30, scale: 8 }).notNull(),
+  // NRC factor used (P_mins / H_mins)
+  nrcFactor: decimal("nrc_factor", { precision: 10, scale: 6 }).notNull(),
+  // Liquidity ratio and multipliers at snapshot time (for auditability)
+  liquidityRatio: decimal("liquidity_ratio", { precision: 18, scale: 12 }).notNull(),
+  timeMultiplier: decimal("time_multiplier", { precision: 10, scale: 4 }).notNull(),
+  inRangeMultiplier: decimal("in_range_multiplier", { precision: 10, scale: 4 }).notNull(),
+  fullRangeBonus: decimal("full_range_bonus", { precision: 10, scale: 4 }).notNull(),
+  executedAt: timestamp("executed_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueSnapshotPosition: unique().on(table.snapshotId, table.positionId),
+}));
+
+// Per-position hourly snap flag and last-snap timestamp
+export const positionHourlyState = pgTable("position_hourly_state", {
+  id: serial("id").primaryKey(),
+  positionId: integer("position_id").references(() => lpPositions.id).notNull().unique(),
+  hasBeenSnapped: boolean("has_been_snapped").notNull().default(false),
+  lastSnapAt: timestamp("last_snap_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 
 
@@ -315,19 +347,6 @@ export const insertRewardSchema = createInsertSchema(rewards).pick({
   stakingStartDate: true,
 });
 
-export const insertDailyRewardSchema = createInsertSchema(dailyRewards).pick({
-  rewardId: true,
-  userId: true,
-  positionId: true,
-  date: true,
-  positionValueUSD: true,
-  baseAPR: true,
-  timeMultiplier: true,
-  sizeMultiplier: true,
-  effectiveAPR: true,
-  dailyRewardAmount: true,
-  daysStaked: true,
-});
 
 export const insertPoolStatsSchema = createInsertSchema(poolStats).pick({
   poolAddress: true,
@@ -391,10 +410,16 @@ export type InsertLpPosition = z.infer<typeof insertLpPositionSchema>;
 export type LpPosition = typeof lpPositions.$inferSelect;
 export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type Reward = typeof rewards.$inferSelect;
-export type InsertDailyReward = z.infer<typeof insertDailyRewardSchema>;
-export type DailyReward = typeof dailyRewards.$inferSelect;
 export type InsertPoolStats = z.infer<typeof insertPoolStatsSchema>;
 export type PoolStats = typeof poolStats.$inferSelect;
+
+// Hourly snapshot and reward types
+export type HourlySnapshot = typeof hourlySnapshots.$inferSelect;
+export type InsertHourlySnapshot = typeof hourlySnapshots.$inferInsert;
+export type HourlyReward = typeof hourlyRewards.$inferSelect;
+export type InsertHourlyReward = typeof hourlyRewards.$inferInsert;
+export type PositionHourlyState = typeof positionHourlyState.$inferSelect;
+export type InsertPositionHourlyState = typeof positionHourlyState.$inferInsert;
 
 
 
