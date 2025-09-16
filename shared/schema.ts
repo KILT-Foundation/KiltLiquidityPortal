@@ -72,6 +72,16 @@ export const rewards = pgTable("rewards", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Minimal claims table for audit and UI
+export const claims = pgTable("claims", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  amount: decimal("amount", { precision: 30, scale: 8 }).notNull(),
+  txHash: text("tx_hash"),
+  status: text("status").notNull().default('confirmed'),
+  claimedAt: timestamp("claimed_at").defaultNow(),
+});
+
 // Real-time pool statistics
 export const poolStats = pgTable("pool_stats", {
   id: serial("id").primaryKey(),
@@ -347,6 +357,13 @@ export const insertRewardSchema = createInsertSchema(rewards).pick({
   stakingStartDate: true,
 });
 
+export const insertClaimSchema = createInsertSchema(claims).pick({
+  userId: true,
+  amount: true,
+  txHash: true,
+  status: true,
+});
+
 
 export const insertPoolStatsSchema = createInsertSchema(poolStats).pick({
   poolAddress: true,
@@ -410,6 +427,8 @@ export type InsertLpPosition = z.infer<typeof insertLpPositionSchema>;
 export type LpPosition = typeof lpPositions.$inferSelect;
 export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type Reward = typeof rewards.$inferSelect;
+export type Claim = typeof claims.$inferSelect;
+export type InsertClaim = z.infer<typeof insertClaimSchema>;
 export type InsertPoolStats = z.infer<typeof insertPoolStatsSchema>;
 export type PoolStats = typeof poolStats.$inferSelect;
 

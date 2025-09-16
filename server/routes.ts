@@ -1153,6 +1153,40 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
     }
   });
 
+  // Claims: record minimal info into claims table after on-chain success
+  app.post('/api/claims/log', async (req, res) => {
+    try {
+      const { db } = await import('./db');
+      const { claims, users, lpPositions } = await import('../shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const { amount, userAddress, txHash } = req.body || {};
+
+      if (amount == null || Number(amount) <= 0) {
+        return res.status(400).json({ success: false, error: 'amount must be > 0' });
+      }
+      if (!userAddress) {
+        return res.status(400).json({ success: false, error: 'userAddress required' });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.address, String(userAddress))).limit(1);
+      if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+      
+
+      const [row] = await db.insert(claims).values({
+        userId: user.id,
+        amount: String(amount),
+        txHash: txHash || null,
+        status: 'confirmed',
+      }).returning();
+
+      res.json({ success: true, claimId: row.id });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(400).json({ success: false, error: message });
+    }
+  });
+
   // Get real-time KILT token data with BLAZING FAST caching
   app.get("/api/kilt-data", async (req, res) => {
     try {

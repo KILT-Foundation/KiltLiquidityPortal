@@ -70,23 +70,7 @@ export class DailyRewardAccrualService {
     // Calculate APR values
     const baseAPR = config.inRangePoolSize > 0 ? (dailyRewardAmount * kiltPrice * 365.25 / positionValueUSD): 0;
     const effectiveAPR = baseAPR * timeMultiplier;
-    console.log(`🔍 Daily reward amount for position ${position.nftTokenId}: ${dailyRewardAmount.toFixed(2)} KILT`);
-    console.log(`🔍 Base APR for position ${position.nftTokenId}: ${baseAPR.toFixed(2)}%`);
-    console.log(`🔍 Effective APR for position ${position.nftTokenId}: ${effectiveAPR.toFixed(2)}%`);
-    console.log(`🔍 Liquidity ratio for position ${position.nftTokenId}: ${liquidityRatio.toFixed(6)}`);
-    console.log(`🔍 Time multiplier for position ${position.nftTokenId}: ${timeMultiplier.toFixed(4)}`);
-    console.log(`🔍 Daily budget for position ${position.nftTokenId}: ${config.dailyBudget.toFixed(2)} KILT`);
-    console.log(`🔍 In-range pool size for position ${position.nftTokenId}: ${config.inRangePoolSize.toFixed(2)}`);
-    console.log(`🔍 Program duration days for position ${position.nftTokenId}: ${config.programDurationDays.toFixed(2)}`);
-    console.log(`🔍 Days staked for position ${position.nftTokenId}: ${daysStaked.toFixed(2)}`);
-    console.log(`🔍 Position value USD for position ${position.nftTokenId}: ${positionValueUSD.toFixed(2)}`);
-    console.log(`🔍 Position created at for position ${position.nftTokenId}: ${positionCreatedAt.toISOString()}`);
-    console.log(`🔍 Date for position ${position.nftTokenId}: ${date.toISOString()}`);
-    console.log(`🔍 Position ID for position ${position.nftTokenId}: ${position.id}`);
-    console.log(`🔍 NFT token ID for position ${position.nftTokenId}: ${position.nftTokenId}`);
-    console.log(`🔍 User ID for position ${position.nftTokenId}: ${position.userId}`);
-    console.log(`🔍 Position created at for position ${position.nftTokenId}: ${positionCreatedAt.toISOString()}`);
-    console.log(`🔍 Date for position ${position.nftTokenId}: ${date.toISOString()}`);
+
     return {
       date: date.toISOString().split('T')[0],
       positionId: position.id,
