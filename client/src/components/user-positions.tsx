@@ -165,45 +165,6 @@ export function UserPositions() {
   }) : [];
   
 
-
-
-
-  // Database rewards integration
-  const { data: userData } = useQuery({
-    queryKey: [`/api/users/${address}`],
-    enabled: !!address,
-  });
-
-  const typedUserData = userData as { id: number } | undefined;
-  const { data: rewards = [] } = useUserRewards(typedUserData?.id || null);
-
-  const claimRewardsMutation = useMutation({
-    mutationFn: async () => {
-      if (!typedUserData?.id) throw new Error('User not found');
-      const response = await apiRequest(`/api/rewards/claim/${typedUserData.id}`, {
-        method: 'POST',
-        data: {}
-      });
-      return response;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Rewards Claimed",
-        description: "Your rewards have been successfully claimed.",
-      });
-      if (typedUserData?.id) {
-        queryClient.invalidateQueries({ queryKey: [`/api/rewards/user/${typedUserData.id}`] });
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to claim rewards",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleLiquidityManagement = async () => {
     if (!selectedPosition || !managementMode) return;
 
@@ -314,14 +275,6 @@ export function UserPositions() {
       </Card>
     );
   }
-
-  const unclaimedRewards = Array.isArray(rewards) ? rewards.filter((r: { claimedAt?: Date | null }) => !r.claimedAt) : [];
-  const totalUnclaimed = unclaimedRewards.reduce((sum: number, r: { amount: string | number }) => {
-    // Safe null check before toString()
-    const amount = r.amount;
-    if (amount === null || amount === undefined) return sum;
-    return sum + parseFloat(amount.toString());
-  }, 0);
 
   return (
     <div className="space-y-4 h-full overflow-y-auto">
@@ -776,36 +729,6 @@ export function UserPositions() {
             </div>
           </div>
         </div>
-      )}
-      {/* Rewards Summary */}
-      {totalUnclaimed > 0 && (
-        <Card className="cluely-card rounded-2xl">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#ff0066] to-[#ff0066] rounded-lg flex items-center justify-center">
-                  <Gift className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-white font-bold">Total Rewards Available</div>
-                  <div className="text-white/60 text-sm">Ready to claim from all positions</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-white tabular-nums">
-                  {totalUnclaimed.toFixed(1)} KILT
-                </div>
-                <Button 
-                  onClick={() => claimRewardsMutation.mutate()}
-                  disabled={claimRewardsMutation.isPending}
-                  className="mt-2 bg-gradient-to-r from-[#ff0066] to-[#ff0066] hover:from-[#ff0066] hover:to-[#ff0066]"
-                >
-                  {claimRewardsMutation.isPending ? 'Claiming...' : 'Claim All'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       )}
     </div>
   );
