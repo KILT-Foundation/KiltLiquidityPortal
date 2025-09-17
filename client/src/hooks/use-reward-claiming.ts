@@ -280,6 +280,17 @@ export function useRewardClaiming() {
         throw new Error('Reward claim transaction failed');
       }
 
+      // Log claim to backend (minimal claims table)
+      try {
+        await fetch('/api/claims/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: signedAmount, userAddress: address, txHash: claimHash })
+        });
+      } catch {
+        console.error('Failed to log claim to backend');
+      }
+
 
       // Return success result
       return {

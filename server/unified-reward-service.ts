@@ -4,12 +4,15 @@
  */
 
 import { db } from './db';
-import { lpPositions, users, programSettings } from '../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { lpPositions, users, programSettings, rewards } from '../shared/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { smartContractService } from './smart-contract-service';
+import { registeredPoolAnalyticsService } from './registered-pool-analytics';
+import { dailyRewardAccrualService } from './daily-reward-accrual-service';
 
 interface CachedData {
-  poolTVL: number;
+  poolTVL: number; // Overall Uniswap pool TVL (for APR calculations)
+  inRangePoolSize: number; // Sum of registered in-range positions (for reward calculations)
   tradingAPR: number;
   programAPR: number;
   dailyBudget: number;
@@ -64,6 +67,11 @@ export class UnifiedRewardService {
       
       // Get pool TVL from a simple, fast endpoint instead of multiple API calls
       const poolTVL = await this.getPoolTVL();
+      
+      // Get In Range Pool Size - sum of registered in-range NFTs' values
+      // This is used for reward calculations instead of overall pool TVL
+      const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
+      
       const dailyBudget = config.dailyBudget;
       
       // Pool-wide APR calculation: All KILT/ETH LPs are potential program participants
@@ -85,7 +93,8 @@ export class UnifiedRewardService {
       console.log(`💰 PROGRAM APR: ${calculatedProgramAPR.toFixed(1)}% (${dailyBudget} KILT daily × ${programDurationDays} days ÷ $${poolTVL} pool TVL × annualized)`);
 
       const marketData: CachedData = {
-        poolTVL: poolTVL,
+        poolTVL: poolTVL, // Overall Uniswap pool TVL (for APR calculations)
+        inRangePoolSize: inRangePoolSize, // Sum of registered in-range positions (for reward calculations)
         tradingAPR: this.FALLBACK_TRADING_APR, // Use cached value instead of API call
         programAPR: calculatedProgramAPR,
         dailyBudget: config.dailyBudget,
@@ -108,7 +117,8 @@ export class UnifiedRewardService {
 
       // Return fallback data with calculated APR
       const fallbackData: CachedData = {
-        poolTVL: this.FALLBACK_POOL_TVL,
+        poolTVL: this.FALLBACK_POOL_TVL, // Overall Uniswap pool TVL (for APR calculations)
+        inRangePoolSize: 0, // Fallback to 0 if we can't calculate in-range pool size
         tradingAPR: this.FALLBACK_TRADING_APR,
         programAPR: fallbackProgramAPR,
         dailyBudget: 25000,
@@ -125,10 +135,30 @@ export class UnifiedRewardService {
   /**
    * Get pool TVL quickly without heavy API calls
    */
-  private async getPoolTVL(): Promise<number> {
+  public async getPoolTVL(): Promise<number> {
     try {
       // Simple TVL calculation from cached data instead of complex API calls
-      return this.FALLBACK_POOL_TVL; // Use reliable fallback for consistent calculations
+      let dexScreenerData;
+      try {
+        const dexResponse = await fetch('https://api.dexscreener.com/latest/dex/pairs/base/0x82da478b1382b951cbad01beb9ed459cdb16458e');
+        if (dexResponse.ok) {
+          const data = await dexResponse.json();
+          const pair = data.pairs?.[0];
+          dexScreenerData = {
+            poolTVL: pair?.liquidity?.usd || 102250.23,
+            volume24h: pair?.volume?.h24 || 0
+          };
+        } else {
+          throw new Error('DexScreener API failed');
+        }
+      } catch (error) {
+        console.warn('Using fallback DexScreener data for program analytics');
+        dexScreenerData = {
+          poolTVL: 102250.23,
+          volume24h: 0
+        };
+      }
+      return dexScreenerData.poolTVL;
     } catch (error) {
       console.warn('Pool TVL fetch failed, using fallback:', error);
       return this.FALLBACK_POOL_TVL;
@@ -181,7 +211,45 @@ export class UnifiedRewardService {
   }
 
   /**
-   * Calculate rewards for a single position with optimized logic
+   * Get rewards for a position from stored daily rewards (proper historical tracking)
+   */
+  async getPositionRewardFromStoredData(position: any): Promise<PositionReward> {
+    try {
+      // Get accumulated rewards from stored daily data
+      const accumulatedData = await dailyRewardAccrualService.getAccumulatedRewards(position.id);
+      
+      // Get current daily rate (what they'll earn today)
+      const currentDailyRate = await dailyRewardAccrualService.getCurrentDailyRate(position.id);
+      
+      const currentValueUSD = parseFloat(position.currentValueUSD || '0');
+      const positionAgeHours = Math.max(1, Math.floor((new Date().getTime() - new Date(position.createdAt).getTime()) / (1000 * 60 * 60)));
+      
+      return {
+        nftTokenId: position.nftTokenId,
+        dailyRewards: currentDailyRate,
+        accumulatedRewards: accumulatedData.totalAccumulated,
+        hourlyRewards: currentDailyRate / 24,
+        totalHours: positionAgeHours,
+        liquidityAmount: currentValueUSD,
+        effectiveAPR: currentValueUSD > 0 ? (accumulatedData.totalAccumulated / currentValueUSD) * (365 / (positionAgeHours / 24)) * 100 : 0
+      };
+    } catch (error) {
+      console.error(`Error getting stored rewards for position ${position.nftTokenId}:`, error);
+      // Fallback to zero rewards if there's an error
+      return {
+        nftTokenId: position.nftTokenId,
+        dailyRewards: 0,
+        accumulatedRewards: 0,
+        hourlyRewards: 0,
+        totalHours: 0,
+        liquidityAmount: 0,
+        effectiveAPR: 0
+      };
+    }
+  }
+
+  /**
+   * Calculate rewards for a single position with optimized logic (DEPRECATED - use getPositionRewardFromStoredData)
    */
   private calculatePositionReward(
     position: any,
@@ -209,9 +277,9 @@ export class UnifiedRewardService {
 
     // Formula parameters (optimized for performance)
     const L_u = currentValueUSD; // User liquidity
-    const L_T = marketData.poolTVL; // Total pool liquidity
+    const L_T = marketData.inRangePoolSize || marketData.poolTVL; // Use In Range Pool Size for reward calculations, fallback to overall pool TVL
     const D_u = positionAgeDays; // Position age for time multiplier
-    const P = 365; // Program duration (days)
+    const P = marketData.programDurationDays; // Program duration (days)
     const R_P = marketData.dailyBudget; // Daily reward budget
 
     // Multipliers (configurable but using efficient defaults)
@@ -220,6 +288,7 @@ export class UnifiedRewardService {
     const FRB = 1.0; // Full range bonus multiplier
 
     // CORE CALCULATION: R_u = (L_u/L_T) × (1 + ((D_u/P) × b_time)) × IRM × FRB × (R/P)
+    // L_T is now the In Range Pool Size (sum of registered in-range NFTs' values) instead of overall pool TVL
     const liquidityRatio = L_u / L_T;
     const currentTimeBoost = 1 + ((D_u / P) * b_time);
     
@@ -292,7 +361,7 @@ export class UnifiedRewardService {
           return { success: false, claimedAmount: 0, error: error.message };
         }),
         Promise.all(activePositions.map(position => 
-          this.calculatePositionReward(position, marketData, position.createdAt || new Date())
+          this.getPositionRewardFromStoredData(position)
         ))
       ]);
 
@@ -369,8 +438,7 @@ export class UnifiedRewardService {
         };
       }
 
-      const marketData = await this.getMarketData();
-      return this.calculatePositionReward(position, marketData, position.createdAt || new Date());
+      return this.getPositionRewardFromStoredData(position);
 
     } catch (error) {
       console.error(`Failed to get position reward for ${nftTokenId}:`, error);

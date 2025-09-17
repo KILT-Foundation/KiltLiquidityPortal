@@ -525,7 +525,7 @@ export function RewardsTracking() {
                  {(rewardStats?.totalClaimable || 0) > 0 
                    ? `≈ $${((rewardStats?.totalClaimable || 0) * (kiltData?.price || 0)).toFixed(2)} USD`
                    : (rewardStats?.totalAccumulated || 0) > 0
-                     ? 'Rewards accumulating (locked)'
+                     ? 'Rewards accumulating ' + (claimability?.canClaim ? '' : 'locked')
                      : 'Connect positions to earn'
                  }
                </div>
@@ -604,7 +604,7 @@ export function RewardsTracking() {
               {/* Show accumulated amount when claimable is 0 but accumulated > 0 */}
               {(rewardStats?.totalClaimable || 0) === 0 && (rewardStats?.totalAccumulated || 0) > 0 && (
                 <div className="text-green-400/80 text-xs mb-2">
-                  {(rewardStats?.totalAccumulated || 0).toFixed(2)} KILT accumulated (locked)
+                  {(rewardStats?.totalAccumulated || 0).toFixed(2)} KILT accumulated till now {(claimability?.canClaim ? '' : 'locked')}
                 </div>
               )}
               <div className="text-white/50 text-sm mb-3">

@@ -46,6 +46,9 @@ import { appTransactionService } from "./app-transaction-service";
 import { positionRegistrationService } from "./position-registration-service";
 import { DataIntegrityMonitor } from "./data-integrity-monitor";
 import { blockchainConfigService } from "./blockchain-config-service";
+import { registeredPoolAnalyticsService } from "./registered-pool-analytics";
+import { dailyRewardAccrualService } from "./daily-reward-accrual-service";
+import { cronScheduler } from "./cron-scheduler";
 // import { eip712Signer } from "./eip712-signer.js"; // Commented out - not currently used
 
 
@@ -59,6 +62,7 @@ import { productionErrorHandler, withProductionErrorHandling } from "./productio
 import rewardDistributionRoutes from "./routes/reward-distribution";
 import enhancedSecurityRoutes from "./routes/enhanced-security";
 import { blockchainSyncValidator } from "./blockchain-sync-validator";
+import { hourlyRewardAccrualService } from "./hourly-reward-accrual-service";
 // Removed registerUniswapOptimizedRoutes - cleaned up during optimization
 // Removed systemHealthRouter - consolidated into main routes
 // Removed uniswapPositionsRouter - consolidated into main routes
@@ -1057,6 +1061,129 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       res.json(stats);
     } catch (error) {
       res.status(400).json({ error: "Invalid pool stats data" });
+    }
+  });
+
+  // Registered Pool Analytics - In Range Pool Size for reward calculations
+  app.get("/api/registered-pool-analytics", async (req, res) => {
+    try {
+      const analytics = await registeredPoolAnalyticsService.getRegisteredPoolAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error fetching registered pool analytics:', error);
+      res.status(500).json({ error: "Failed to fetch registered pool analytics" });
+    }
+  });
+
+  // Get accumulated rewards for a specific position
+  app.get("/api/rewards/position/:positionId/accumulated", async (req, res) => {
+    try {
+      const { positionId } = req.params;
+      const result = await dailyRewardAccrualService.getAccumulatedRewards(parseInt(positionId));
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching accumulated rewards:', error);
+      res.status(500).json({ error: "Failed to fetch accumulated rewards" });
+    }
+  });
+
+  // Get current daily rate for a position
+  app.get("/api/rewards/position/:positionId/daily-rate", async (req, res) => {
+    try {
+      const { positionId } = req.params;
+      const dailyRate = await dailyRewardAccrualService.getCurrentDailyRate(parseInt(positionId));
+      res.json({ dailyRate });
+    } catch (error) {
+      console.error('Error fetching daily rate:', error);
+      res.status(500).json({ error: "Failed to fetch daily rate" });
+    }
+  });
+
+  // Cron Scheduler Management
+  app.get("/api/cron/status", async (req, res) => {
+    try {
+      const status = cronScheduler.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error('Error getting cron status:', error);
+      res.status(500).json({ error: "Failed to get cron status" });
+    }
+  });
+
+  app.post("/api/cron/start", async (req, res) => {
+    try {
+      cronScheduler.start();
+      res.json({ success: true, message: "Cron scheduler started" });
+    } catch (error) {
+      console.error('Error starting cron scheduler:', error);
+      res.status(500).json({ error: "Failed to start cron scheduler" });
+    }
+  });
+
+  app.post("/api/cron/stop", async (req, res) => {
+    try {
+      cronScheduler.stop();
+      res.json({ success: true, message: "Cron scheduler stopped" });
+    } catch (error) {
+      console.error('Error stopping cron scheduler:', error);
+      res.status(500).json({ error: "Failed to stop cron scheduler" });
+    }
+  });
+
+  app.post("/api/cron/trigger-hourly-snapshot", async (req, res) => {
+    try {
+      const result = await hourlyRewardAccrualService.processHourlySnapshot(new Date());
+      res.json(result);
+    } catch (error) {
+      console.error('Error triggering hourly snapshot:', error);
+      res.status(500).json({ error: "Failed to trigger hourly snapshot" });
+    }
+  });
+
+  app.get("/api/hourly/snapshots/latest", async (req, res) => {
+    try {
+      const { hourlySnapshots } = await import('../shared/schema');
+      const { db } = await import('./db');
+      const { desc } = await import('drizzle-orm');
+      const data = await db.select().from(hourlySnapshots).orderBy(desc(hourlySnapshots.executedAt)).limit(10);
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching latest hourly snapshots:', error);
+      res.status(500).json({ error: "Failed to fetch hourly snapshots" });
+    }
+  });
+
+  // Claims: record minimal info into claims table after on-chain success
+  app.post('/api/claims/log', async (req, res) => {
+    try {
+      const { db } = await import('./db');
+      const { claims, users, lpPositions } = await import('../shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const { amount, userAddress, txHash } = req.body || {};
+
+      if (amount == null || Number(amount) <= 0) {
+        return res.status(400).json({ success: false, error: 'amount must be > 0' });
+      }
+      if (!userAddress) {
+        return res.status(400).json({ success: false, error: 'userAddress required' });
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.address, String(userAddress))).limit(1);
+      if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+      
+
+      const [row] = await db.insert(claims).values({
+        userId: user.id,
+        amount: String(amount),
+        txHash: txHash || null,
+        status: 'confirmed',
+      }).returning();
+
+      res.json({ success: true, claimId: row.id });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.status(400).json({ success: false, error: message });
     }
   });
 
@@ -2137,80 +2264,63 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
         return res.status(404).json({ error: 'User not found' });
       }
 
-      // Get user's active positions count
-      const allPositions = await storage.getLpPositionsByUserId(user.id);
-      const activePositions = allPositions.filter(pos => pos.isActive === true);
+      // Get user's reward stats using the unified reward service
+      const userRewardStats = await unifiedRewardService.getUserRewardStats(user.id);
+      const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
       
-      console.log(`🎯 User ${address} attempting streamlined APR calculation for ${activePositions.length} positions...`);
+      console.log(`🎯 Calculating actual user APR for ${address} with ${userRewardStats.activePositions} active positions...`);
       
-      // Always use streamlined APR - no old calculation methods
-      try {
-        const streamlinedResponse = await fetch('http://localhost:5000/api/apr/streamlined');
-        console.log(`📡 Streamlined response status: ${streamlinedResponse.status}`);
-        
-        if (streamlinedResponse.ok) {
-          const streamlinedData = await streamlinedResponse.json();
-          console.log(`✅ Using streamlined APR: Program ${streamlinedData.programAPR}%, Trading ${streamlinedData.tradingAPR}%, Total ${streamlinedData.totalAPR}%`);
-
-          // Calculate simple user liquidity estimate (use stored USD values)
-          let totalUserLiquidity = 0;
-          for (const position of activePositions) {
-            try {
-              // Use the stored currentValueUSD if available, otherwise reasonable fallback
-              const liquidityValue = parseFloat(position.currentValueUSD || '0');
-              if (liquidityValue > 0 && liquidityValue < 100000) { // Sanity check
-                totalUserLiquidity += liquidityValue;
-              } else {
-                totalUserLiquidity += 300; // Reasonable fallback per position
-              }
-            } catch (error) {
-              console.warn(`Error calculating liquidity for position ${position.nftTokenId}:`, error);
-            }
-          }
-
-          console.log(`💰 User ${address} total liquidity: $${totalUserLiquidity.toFixed(2)}`);
-
-          return res.json({
-            averageAPR: Math.round(streamlinedData.totalAPR * 100) / 100,
-            totalPositions: allPositions.length,
-            activePositions: activePositions.length,
-            breakdown: {
-              tradingAPR: Math.round(streamlinedData.tradingAPR * 100) / 100,
-              incentiveAPR: Math.round(streamlinedData.programAPR * 100) / 100,
-              totalLiquidity: Math.round(totalUserLiquidity * 100) / 100
-            }
-          });
-        } else {
-          console.warn(`❌ Streamlined response not ok: ${streamlinedResponse.status}`);
+      // Calculate user's actual average APR based on their accumulated rewards
+      let totalLiquidity = 0;
+      let totalAccumulatedRewards = 0;
+      let totalDailyRewards = 0;
+      let averageAPR = 0;
+      
+      for (const position of userRewardStats.positions) {
+        totalLiquidity += position.liquidityAmount;
+        totalAccumulatedRewards += position.accumulatedRewards;
+        totalDailyRewards += position.dailyRewards;
+        if (totalLiquidity > 0 && totalAccumulatedRewards > 0) {
+          // Estimate position age (this could be improved with actual position creation dates)
+          averageAPR += (position.liquidityAmount * 365 / inRangePoolSize) * 100;
         }
-      } catch (error) {
-        console.error('❌ Streamlined APR fetch failed:', error);
       }
 
-      // Fallback to realistic values (no old calculation methods)
-      console.log(`🔄 Using realistic fallback APR for user ${address}`);
+      // Calculate actual APR based on accumulated rewards vs liquidity
+
+
+
+      console.log(`💰 User ${address} - Liquidity: $${totalLiquidity.toFixed(2)}, Accumulated: ${totalAccumulatedRewards.toFixed(2)} KILT, Daily: ${totalDailyRewards.toFixed(2)} KILT`);
+      console.log(`📊 User ${address} - Actual APR: ${averageAPR.toFixed(2)}%`);
+
       return res.json({
-        averageAPR: 153.6, // Realistic total APR
-        totalPositions: allPositions.length,
-        activePositions: activePositions.length,
+        averageAPR: Math.round(averageAPR/userRewardStats.positions.length * 100) / 100,
+        totalPositions: userRewardStats.positions.length,
+        activePositions: userRewardStats.activePositions,
         breakdown: {
-          tradingAPR: 4.5, // Realistic trading APR
-          incentiveAPR: 149.1, // Realistic program APR
-          totalLiquidity: 2654.22 // Estimated user liquidity
+          totalLiquidity: Math.round(totalLiquidity * 100) / 100,
+          totalAccumulatedRewards: Math.round(totalAccumulatedRewards * 100) / 100,
+          totalDailyRewards: Math.round(totalDailyRewards * 100) / 100,
+          totalClaimable: Math.round(userRewardStats.totalClaimable * 100) / 100,
+          totalClaimed: Math.round(userRewardStats.totalClaimed * 100) / 100
         }
       });
+
     } catch (error: any) {
       console.error('Error in user average APR endpoint:', error);
       return res.status(500).json({ 
-        averageAPR: 153.6, // Realistic fallback
+        averageAPR: 0,
+        dailyAPR: 0,
         totalPositions: 0,
         activePositions: 0,
         breakdown: {
-          tradingAPR: 4.5,
-          incentiveAPR: 149.1,
-          totalLiquidity: 0
+          totalLiquidity: 0,
+          totalAccumulatedRewards: 0,
+          totalDailyRewards: 0,
+          totalClaimable: 0,
+          totalClaimed: 0
         },
-        error: 'Database connection issue - please refresh'
+        error: 'Failed to calculate user APR'
       });
     }
   });
@@ -3176,6 +3286,8 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       } catch (error) {
         console.warn('Failed to fetch pool TVL, using fallback:', error);
       }
+
+      const registeredPoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
       
       // Use conservative estimates until we implement proper LP counting
       // Note: Actual LP count requires querying Mint/Burn events from the pool contract

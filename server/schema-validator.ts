@@ -5,7 +5,9 @@ import {
   users, 
   lpPositions, 
   rewards, 
-  dailyRewards, 
+  hourlyRewards,
+  hourlySnapshots,
+  positionHourlyState,
   treasuryConfig, 
   programSettings,
   appTransactions,
@@ -64,7 +66,9 @@ export class SchemaValidator {
         this.validateUsers(),
         this.validateLpPositions(),
         this.validateRewards(),
-        this.validateDailyRewards(),
+        this.validateHourlyRewards(),
+        this.validateHourlySnapshots(),
+        this.validatePositionHourlyState(),
         this.validateTreasuryConfig(),
         this.validateProgramSettings(),
         this.validateAppTransactions(),
@@ -374,8 +378,16 @@ export class SchemaValidator {
   }
 
   // Additional validation methods for other tables...
-  private async validateDailyRewards(): Promise<ValidationResult> {
-    return this.createEmptyValidationResult('dailyRewards');
+  private async validateHourlyRewards(): Promise<ValidationResult> {
+    return this.createEmptyValidationResult('hourlyRewards');
+  }
+
+  private async validateHourlySnapshots(): Promise<ValidationResult> {
+    return this.createEmptyValidationResult('hourlySnapshots');
+  }
+
+  private async validatePositionHourlyState(): Promise<ValidationResult> {
+    return this.createEmptyValidationResult('positionHourlyState');
   }
 
   private async validateTreasuryConfig(): Promise<ValidationResult> {
