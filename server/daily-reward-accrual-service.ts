@@ -67,8 +67,14 @@ export class DailyRewardAccrualService {
     // Calculate daily reward amount
     const dailyRewardAmount = liquidityRatio * timeMultiplier * config.dailyBudget;
     const kiltPrice = await kiltPriceService.getCurrentPrice();
-    // Calculate APR values
-    const baseAPR = config.inRangePoolSize > 0 ? (dailyRewardAmount * kiltPrice * 365.25 / positionValueUSD): 0;
+   
+    const minutesPerDay = 1440; // Minutes in a day
+    const minutesPerYear = 525960; // Average minutes in a year
+    
+    const annualRewardsUSD = (dailyRewardAmount * kiltPrice) / (minutesPerDay / minutesPerYear);
+    
+    // Calculate APR as percentage
+    const baseAPR = positionValueUSD > 0 ? (annualRewardsUSD / positionValueUSD) * 100 : 0;
     const effectiveAPR = baseAPR * timeMultiplier;
 
     return {
@@ -117,7 +123,7 @@ export class DailyRewardAccrualService {
 
     const totalAccumulated = parseFloat(rewardRecord[0].accumulatedAmount);
 
-    const hourlyBreakdown = hourlyRecords.map(record => ({
+    const hourlyBreakdown = hourlyRecords.map((record: any) => ({
       date: record.executedAt.toISOString().split('T')[0],
       amount: parseFloat(record.rewardAmount),
       inRange: true, // Simplified check
@@ -132,35 +138,50 @@ export class DailyRewardAccrualService {
 
   /**
    * Get current daily rate for a position (what they'll earn today)
+   * Returns the normalized daily rate from the database, not the raw calculated rate
    */
   async getCurrentDailyRate(positionId: number): Promise<number> {
-    const [position] = await db
-      .select()
-      .from(lpPositions)
-      .where(eq(lpPositions.id, positionId))
+    // Get the most recent reward record which contains the normalized daily rate
+    const [rewardRecord] = await db
+      .select({ dailyRewardAmount: rewards.dailyRewardAmount })
+      .from(rewards)
+      .where(eq(rewards.positionId, positionId))
+      .orderBy(desc(rewards.lastRewardCalculation))
       .limit(1);
 
-    if (!position) return 0;
+    if (!rewardRecord) {
+      // Fallback to raw calculation if no reward record exists yet
+      const [position] = await db
+        .select()
+        .from(lpPositions)
+        .where(eq(lpPositions.id, positionId))
+        .limit(1);
 
-    const [programConfig] = await db.select().from(programSettings).limit(1);
-    const [treasuryConfigData] = await db.select().from(treasuryConfig).limit(1);
+      if (!position) return 0;
 
-    if (!programConfig || !treasuryConfigData) return 0;
+      const [programConfig] = await db.select().from(programSettings).limit(1);
+      const [treasuryConfigData] = await db.select().from(treasuryConfig).limit(1);
 
-    const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
-    const dailyBudget = parseFloat(treasuryConfigData.dailyRewardsCap || '25000');
-    const timeBoostCoefficient = parseFloat(programConfig.timeBoostCoefficient?.toString() || '0.6');
-    const fullRangeBonus = parseFloat(programConfig.fullRangeBonus?.toString() || '1.2');
+      if (!programConfig || !treasuryConfigData) return 0;
 
-    const calculation = await this.calculateDailyReward(position, new Date(), {
-      dailyBudget,
-      inRangePoolSize,
-      timeBoostCoefficient,
-      fullRangeBonus,
-      programDurationDays: parseFloat(treasuryConfigData.programDurationDays?.toString() || '365')
-    });
+      const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
+      const dailyBudget = parseFloat(treasuryConfigData.dailyRewardsCap || '25000');
+      const timeBoostCoefficient = parseFloat(programConfig.timeBoostCoefficient?.toString() || '0.6');
+      const fullRangeBonus = parseFloat(programConfig.fullRangeBonus?.toString() || '1.2');
 
-    return calculation.dailyRewardAmount;
+      const calculation = await this.calculateDailyReward(position, new Date(), {
+        dailyBudget,
+        inRangePoolSize,
+        timeBoostCoefficient,
+        fullRangeBonus,
+        programDurationDays: parseFloat(treasuryConfigData.programDurationDays?.toString() || '365')
+      });
+
+      return calculation.dailyRewardAmount;
+    }
+
+    // Return the normalized daily rate from the database
+    return parseFloat(rewardRecord.dailyRewardAmount || '0');
   }
 }
 

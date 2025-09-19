@@ -4,8 +4,8 @@
  */
 
 import { db } from './db';
-import { lpPositions, users, programSettings, rewards } from '../shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { lpPositions, users, programSettings, rewards, treasuryConfig, claims } from '../shared/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { smartContractService } from './smart-contract-service';
 import { registeredPoolAnalyticsService } from './registered-pool-analytics';
 import { dailyRewardAccrualService } from './daily-reward-accrual-service';
@@ -29,6 +29,7 @@ interface PositionReward {
   hourlyRewards: number;
   totalHours: number;
   liquidityAmount: number;
+  baseAPR: number;
   effectiveAPR: number;
   tradingFeeAPR?: number;
   incentiveAPR?: number;
@@ -224,6 +225,16 @@ export class UnifiedRewardService {
       const currentValueUSD = parseFloat(position.currentValueUSD || '0');
       const positionAgeHours = Math.max(1, Math.floor((new Date().getTime() - new Date(position.createdAt).getTime()) / (1000 * 60 * 60)));
       
+      // Get APR values from the rewards table
+      const [rewardRecord] = await db
+        .select({ baseAPR: rewards.baseAPR, effectiveAPR: rewards.effectiveAPR })
+        .from(rewards)
+        .where(eq(rewards.positionId, position.id))
+        .limit(1);
+      
+      const baseAPR = rewardRecord ? parseFloat(rewardRecord.baseAPR || '0') : 0;
+      const effectiveAPR = rewardRecord ? parseFloat(rewardRecord.effectiveAPR || '0') : 0;
+      
       return {
         nftTokenId: position.nftTokenId,
         dailyRewards: currentDailyRate,
@@ -231,7 +242,8 @@ export class UnifiedRewardService {
         hourlyRewards: currentDailyRate / 24,
         totalHours: positionAgeHours,
         liquidityAmount: currentValueUSD,
-        effectiveAPR: currentValueUSD > 0 ? (accumulatedData.totalAccumulated / currentValueUSD) * (365 / (positionAgeHours / 24)) * 100 : 0
+        baseAPR: baseAPR,
+        effectiveAPR: effectiveAPR
       };
     } catch (error) {
       console.error(`Error getting stored rewards for position ${position.nftTokenId}:`, error);
@@ -243,6 +255,7 @@ export class UnifiedRewardService {
         hourlyRewards: 0,
         totalHours: 0,
         liquidityAmount: 0,
+        baseAPR: 0,
         effectiveAPR: 0
       };
     }
@@ -267,6 +280,7 @@ export class UnifiedRewardService {
         hourlyRewards: 0,
         totalHours: 0,
         liquidityAmount: 0,
+        baseAPR: 0,
         effectiveAPR: 0
       };
     }
@@ -329,6 +343,7 @@ export class UnifiedRewardService {
       hourlyRewards: Math.max(0, hourlyRewards),
       totalHours: positionAgeHours,
       liquidityAmount: currentValueUSD,
+      baseAPR: Math.max(0, incentiveAPR), // Base APR is the program APR without time multipliers
       effectiveAPR: Math.max(0, effectiveAPR),
       tradingFeeAPR: Math.max(0, tradingFeeAPR),
       incentiveAPR: Math.max(0, incentiveAPR)
@@ -352,29 +367,25 @@ export class UnifiedRewardService {
       }
 
       const walletAddress = userResult[0].address;
-      const activePositions = positions.filter(pos => pos.isActive === true);
+      const activePositions = positions.filter((pos: any) => pos.isActive === true);
 
-      // Get claimed amount in parallel with position calculations
-      const [claimedResult, positionRewards] = await Promise.all([
-        smartContractService.getClaimedAmount(walletAddress).catch(error => {
-          console.warn(`⚠️ Failed to get claimed amount for ${walletAddress}, using 0:`, error.message);
-          return { success: false, claimedAmount: 0, error: error.message };
-        }),
-        Promise.all(activePositions.map(position => 
+      // Get claimed amount from database and position calculations in parallel
+      const [claimedAmount, positionRewards] = await Promise.all([
+        this.getClaimedAmountFromDatabase(walletAddress),
+        Promise.all(activePositions.map((position: any) => 
           this.getPositionRewardFromStoredData(position)
         ))
       ]);
 
-      const actualClaimedAmount = claimedResult?.success ? (claimedResult.claimedAmount || 0) : 0;
-      console.log(`💰 Claimed amount for ${walletAddress}: ${actualClaimedAmount} KILT (success: ${claimedResult?.success})`);
+      console.log(`💰 Claimed amount for ${walletAddress}: ${claimedAmount} KILT (from database)`);
       console.log(`📊 Position rewards calculated: ${positionRewards.length} positions`);
-      positionRewards.forEach((reward, idx) => {
+      positionRewards.forEach((reward: any, idx: number) => {
         console.log(`  Position ${idx + 1}: ${reward.nftTokenId} - Daily: ${reward.dailyRewards.toFixed(2)}, Accumulated: ${reward.accumulatedRewards.toFixed(2)}`);
       });
 
       // Aggregate results efficiently
       const totals = positionRewards.reduce(
-        (acc, reward) => ({
+        (acc: any, reward: any) => ({
           dailyRewards: acc.dailyRewards + reward.dailyRewards,
           accumulated: acc.accumulated + reward.accumulatedRewards
         }),
@@ -386,15 +397,12 @@ export class UnifiedRewardService {
       // Total Claimable = Only unclaimed rewards available to claim now
       
       const totalAccumulated = Math.max(0, totals.accumulated);
-      const actualClaimableAmount = Math.max(0, totalAccumulated - actualClaimedAmount);
-
-      // Ensure Total Earned is never less than Claimed (data consistency check)
-      const adjustedTotalEarned = Math.max(totalAccumulated, actualClaimedAmount + actualClaimableAmount);
-
+      const actualClaimableAmount = Math.max(0, totalAccumulated - claimedAmount);
+      
       return {
-        totalAccumulated: adjustedTotalEarned,
+        totalAccumulated: totalAccumulated,
         totalClaimable: actualClaimableAmount,
-        totalClaimed: actualClaimedAmount || 0,
+        totalClaimed: claimedAmount || 0,
         activePositions: activePositions.length,
         avgDailyRewards: totals.dailyRewards,
         positions: positionRewards
@@ -434,6 +442,7 @@ export class UnifiedRewardService {
           hourlyRewards: 0,
           totalHours: 0,
           liquidityAmount: 0,
+          baseAPR: 0,
           effectiveAPR: 0
         };
       }
@@ -449,6 +458,7 @@ export class UnifiedRewardService {
         hourlyRewards: 0,
         totalHours: 0,
         liquidityAmount: 0,
+        baseAPR: 0,
         effectiveAPR: 0
       };
     }
@@ -636,6 +646,39 @@ export class UnifiedRewardService {
   clearAdminConfigCache(): void {
     this.cache.delete('admin_config');
     console.log('🗑️ Admin configuration cache cleared');
+  }
+
+  /**
+   * Get total claimed amount for a user from the database
+   */
+  private async getClaimedAmountFromDatabase(walletAddress: string): Promise<number> {
+    try {
+      // Get user ID from wallet address
+      const [user] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.address, walletAddress))
+        .limit(1);
+
+      if (!user) {
+        console.log(`👤 No user found for wallet ${walletAddress}`);
+        return 0;
+      }
+
+      // Sum all claims for this user
+      const [result] = await db
+        .select({ totalClaimed: sql<number>`COALESCE(SUM(${claims.amount}::numeric), 0)` })
+        .from(claims)
+        .where(eq(claims.userId, user.id));
+
+      const totalClaimed = result?.totalClaimed || 0;
+      console.log(`💰 Database claims for user ${user.id} (${walletAddress}): ${totalClaimed} KILT`);
+      
+      return totalClaimed;
+    } catch (error) {
+      console.error(`❌ Error getting claimed amount from database for ${walletAddress}:`, error);
+      return 0;
+    }
   }
 }
 

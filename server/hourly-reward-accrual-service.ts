@@ -17,6 +17,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { registeredPoolAnalyticsService } from './registered-pool-analytics';
 import { uniswapIntegrationService } from './uniswap-integration-service';
 import { dailyRewardAccrualService } from './daily-reward-accrual-service';
+import { kiltPriceService } from './kilt-price-service';
 
 function minutesBetween(a: Date, b: Date): number {
   return Math.max(0, Math.floor((a.getTime() - b.getTime()) / (1000 * 60)));
@@ -91,6 +92,15 @@ export class HourlyRewardAccrualService {
       let totalRewardsAccrued = 0;
       const errors: string[] = [];
 
+      const positionCalculations: Array<{
+        position: any;
+        calc: any;
+        rawHourly: number;
+        nrcFactor: number;
+        rawAmount: number;
+        state: any;
+      }> = [];
+
       for (const position of activePositions) {
         try {
           // Reuse daily calculation for consistency, then derive per-hour
@@ -119,7 +129,52 @@ export class HourlyRewardAccrualService {
             nrcFactor = Math.max(0, Math.min(1, hMins > 0 ? pMins / hMins : 0));
           }
 
-          const finalAmount = timeWeightedHourly * nrcFactor;
+          const rawAmount = timeWeightedHourly * nrcFactor;
+
+          positionCalculations.push({
+            position,
+            calc,
+            rawHourly: timeWeightedHourly,
+            nrcFactor,
+            rawAmount,
+            state
+          });
+
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Position ${position.nftTokenId}: ${msg}`);
+        }
+      }
+
+      // Calculate total raw rewards and normalize
+      const totalRawRewards = positionCalculations.reduce((sum, calc) => sum + calc.rawAmount, 0);
+      const normalizationFactor = totalRawRewards > 0 ? allocatedBudgetKilt / totalRawRewards : 0;
+
+      console.log(`🔧 NORMALIZATION - Total Raw: ${totalRawRewards.toFixed(6)} KILT, Allocated: ${allocatedBudgetKilt.toFixed(6)} KILT, Factor: ${normalizationFactor.toFixed(6)}`);
+
+      // Process each position with normalized rewards
+      for (const { position, calc, rawAmount, nrcFactor, state } of positionCalculations) {
+        try {
+          // Apply normalization to ensure we don't exceed the allocated budget
+          const finalAmount = rawAmount * normalizationFactor;
+          
+          // Recalculate daily reward amount and APRs based on normalized amount
+          const normalizedDailyReward = (finalAmount * 24) / (hMins / 60); // Convert back to daily rate
+          
+          const kiltPrice = await kiltPriceService.getCurrentPrice();
+          const epochLengthMinutes = hMins;
+          const minutesPerYear = 525960;
+          
+          // Calculate anticipated real $ rewards per year
+          const annualRewardsUSD = (finalAmount * kiltPrice) / (epochLengthMinutes / minutesPerYear);
+          
+          // Calculate APR as percentage
+          const normalizedBaseAPR = calc.positionValueUSD > 0 ? (annualRewardsUSD / calc.positionValueUSD) * 100 : 0;
+          const normalizedEffectiveAPR = normalizedBaseAPR * calc.timeMultiplier;
+          
+          console.log(`🔧 Position ${position.nftTokenId} - Raw: ${rawAmount.toFixed(6)} KILT, Normalized: ${finalAmount.toFixed(6)} KILT`);
+          console.log(`🔧 Position ${position.nftTokenId} - Raw Daily: ${calc.dailyRewardAmount.toFixed(2)} KILT, Normalized Daily: ${normalizedDailyReward.toFixed(2)} KILT`);
+          console.log(`🔧 Position ${position.nftTokenId} - Raw APR: ${calc.baseAPR.toFixed(2)}%, Normalized APR: ${normalizedBaseAPR.toFixed(2)}%`);
 
           // Get or create reward record first to get rewardId
           let rewardRecord;
@@ -135,13 +190,17 @@ export class HourlyRewardAccrualService {
               .update(rewards)
               .set({
                 accumulatedAmount: newAccum.toString(),
-                dailyRewardAmount: calc.dailyRewardAmount.toString(),
+                dailyRewardAmount: normalizedDailyReward.toString(),
+                baseAPR: normalizedBaseAPR.toString(),
+                effectiveAPR: normalizedEffectiveAPR.toString(),
                 lastRewardCalculation: now,
                 isEligibleForClaim: newAccum > 0,
               })
               .where(eq(rewards.id, existingReward.id))
               .returning();
             rewardRecord = updatedReward;
+            
+            console.log(`📊 Updated APR for position ${position.nftTokenId}: Base ${normalizedBaseAPR.toFixed(4)}%, Effective ${normalizedEffectiveAPR.toFixed(4)}%`);
           } else {
             const [newReward] = await db.insert(rewards).values({
               userId: position.userId,
@@ -149,8 +208,10 @@ export class HourlyRewardAccrualService {
               nftTokenId: position.nftTokenId,
               amount: finalAmount.toString(),
               positionValueUSD: calc.positionValueUSD.toString(),
-              dailyRewardAmount: calc.dailyRewardAmount.toString(),
+              dailyRewardAmount: normalizedDailyReward.toString(),
               accumulatedAmount: finalAmount.toString(),
+              baseAPR: normalizedBaseAPR.toString(),
+              effectiveAPR: normalizedEffectiveAPR.toString(),
               claimedAmount: '0',
               liquidityAddedAt: new Date(position.createdAt),
               stakingStartDate: new Date(position.createdAt),
@@ -159,6 +220,8 @@ export class HourlyRewardAccrualService {
               lockPeriodDays: 7,
             }).returning();
             rewardRecord = newReward;
+            
+            console.log(`📊 Created new reward record for position ${position.nftTokenId}: Base ${normalizedBaseAPR.toFixed(4)}%, Effective ${normalizedEffectiveAPR.toFixed(4)}%`);
           }
 
           await db.insert(hourlyRewards).values({

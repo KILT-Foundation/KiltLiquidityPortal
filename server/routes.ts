@@ -2253,7 +2253,7 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
     }
   });
 
-  // Get user average APR across all positions using streamlined calculation ONLY
+  // Get user average APR across all positions using weighted average from stored APR values
   app.get('/api/rewards/user-average-apr/:address', async (req, res) => {
     try {
       const { address } = req.params;
@@ -2266,35 +2266,57 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
 
       // Get user's reward stats using the unified reward service
       const userRewardStats = await unifiedRewardService.getUserRewardStats(user.id);
-      const inRangePoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
       
-      console.log(`🎯 Calculating actual user APR for ${address} with ${userRewardStats.activePositions} active positions...`);
+      console.log(`🎯 Calculating weighted average APR for ${address} with ${userRewardStats.activePositions} active positions...`);
       
-      // Calculate user's actual average APR based on their accumulated rewards
+      // Calculate weighted average APR based on liquidity amounts
       let totalLiquidity = 0;
       let totalAccumulatedRewards = 0;
       let totalDailyRewards = 0;
-      let averageAPR = 0;
+      let weightedBaseAPR = 0;
+      let weightedEffectiveAPR = 0;
+      let positionBreakdown: Array<{
+        nftTokenId: string;
+        liquidityAmount: number;
+        baseAPR: number;
+        effectiveAPR: number;
+        dailyRewards: number;
+        accumulatedRewards: number;
+      }> = [];
       
       for (const position of userRewardStats.positions) {
-        totalLiquidity += position.liquidityAmount;
+        const liquidityAmount = position.liquidityAmount;
+        const baseAPR = position.baseAPR || 0;
+        const effectiveAPR = position.effectiveAPR || 0;
+        
+        totalLiquidity += liquidityAmount;
         totalAccumulatedRewards += position.accumulatedRewards;
         totalDailyRewards += position.dailyRewards;
-        if (totalLiquidity > 0 && totalAccumulatedRewards > 0) {
-          // Estimate position age (this could be improved with actual position creation dates)
-          averageAPR += (position.liquidityAmount * 365 / inRangePoolSize) * 100;
-        }
+        
+        // Weight APRs by liquidity amount
+        weightedBaseAPR += baseAPR * liquidityAmount;
+        weightedEffectiveAPR += effectiveAPR * liquidityAmount;
+        
+        positionBreakdown.push({
+          nftTokenId: position.nftTokenId,
+          liquidityAmount: Math.round(liquidityAmount * 100) / 100,
+          baseAPR: Math.round(baseAPR * 100) / 100,
+          effectiveAPR: Math.round(effectiveAPR * 100) / 100,
+          dailyRewards: Math.round(position.dailyRewards * 100) / 100,
+          accumulatedRewards: Math.round(position.accumulatedRewards * 100) / 100
+        });
       }
 
-      // Calculate actual APR based on accumulated rewards vs liquidity
-
-
+      // Calculate weighted averages
+      const averageBaseAPR = totalLiquidity > 0 ? weightedBaseAPR / totalLiquidity : 0;
+      const averageEffectiveAPR = totalLiquidity > 0 ? weightedEffectiveAPR / totalLiquidity : 0;
 
       console.log(`💰 User ${address} - Liquidity: $${totalLiquidity.toFixed(2)}, Accumulated: ${totalAccumulatedRewards.toFixed(2)} KILT, Daily: ${totalDailyRewards.toFixed(2)} KILT`);
-      console.log(`📊 User ${address} - Actual APR: ${averageAPR.toFixed(2)}%`);
+      console.log(`📊 User ${address} - Weighted Base APR: ${averageBaseAPR.toFixed(4)}%, Weighted Effective APR: ${averageEffectiveAPR.toFixed(4)}%`);
 
       return res.json({
-        averageAPR: Math.round(averageAPR/userRewardStats.positions.length * 100) / 100,
+        averageBaseAPR: Math.round(averageBaseAPR * 100) / 100,
+        averageEffectiveAPR: Math.round(averageEffectiveAPR * 100) / 100,
         totalPositions: userRewardStats.positions.length,
         activePositions: userRewardStats.activePositions,
         breakdown: {
@@ -2303,14 +2325,15 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
           totalDailyRewards: Math.round(totalDailyRewards * 100) / 100,
           totalClaimable: Math.round(userRewardStats.totalClaimable * 100) / 100,
           totalClaimed: Math.round(userRewardStats.totalClaimed * 100) / 100
-        }
+        },
+        positionBreakdown: positionBreakdown
       });
 
     } catch (error: any) {
       console.error('Error in user average APR endpoint:', error);
       return res.status(500).json({ 
-        averageAPR: 0,
-        dailyAPR: 0,
+        averageBaseAPR: 0,
+        averageEffectiveAPR: 0,
         totalPositions: 0,
         activePositions: 0,
         breakdown: {
@@ -2320,6 +2343,7 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
           totalClaimable: 0,
           totalClaimed: 0
         },
+        positionBreakdown: [],
         error: 'Failed to calculate user APR'
       });
     }
@@ -3297,7 +3321,7 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       // Calculate Program APR using real KILT price in USD
       const dailyBudgetUSD = dailyBudget * kiltPrice;
       const annualBudgetUSD = dailyBudgetUSD * 365;
-      const programAPR = (annualBudgetUSD / poolTVL) * 100;
+      const programAPR = (annualBudgetUSD / registeredPoolSize) * 100;
       
       // Static trading APR
       const tradingAPR = 4.5;

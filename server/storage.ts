@@ -230,6 +230,8 @@ export class MemStorage implements IStorage {
       lockPeriodDays: 7, // Fixed 7-day lock period
       claimedAt: null,
       claimedAmount: '0',
+      baseAPR: insertReward.baseAPR || '0',
+      effectiveAPR: insertReward.effectiveAPR || '0',
       lastRewardCalculation: new Date(),
       isEligibleForClaim: false,
       createdAt: new Date(),
@@ -402,6 +404,8 @@ export class DatabaseStorage implements IStorage {
       lockPeriodDays: anyReward.lockPeriodDays || 7,
       claimedAmount: anyReward.claimedAmount || '0',
       isEligibleForClaim: anyReward.isEligibleForClaim || false,
+      baseAPR: anyReward.baseAPR || '0',
+      effectiveAPR: anyReward.effectiveAPR || '0',
       lastRewardCalculation: anyReward.lastRewardCalculation || new Date(),
     };
     const result = await db.insert(rewards).values(completeReward).returning();

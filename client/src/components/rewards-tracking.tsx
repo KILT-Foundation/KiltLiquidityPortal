@@ -463,7 +463,7 @@ export function RewardsTracking() {
               <BarChart3 className="h-4 w-4 text-purple-400" />
             </div>
             <div className="text-lg text-purple-400 font-bold tabular-nums mb-1">
-              {userAverageAPR?.averageAPR ? `${userAverageAPR.averageAPR.toFixed(1)}%` : '0.0%'}
+              {userAverageAPR?.averageEffectiveAPR ? `${userAverageAPR.averageEffectiveAPR.toFixed(1)}%` : '0.0%'}
             </div>
             <div className="text-xs text-white/60 mb-1">
               {eligibleData?.registeredCount || 0} active positions
@@ -561,7 +561,7 @@ export function RewardsTracking() {
               <CheckCircle className="h-4 w-4 text-green-400" />
             </div>
             <div className="text-lg text-white mb-1 numeric-large">
-              {rewardStats?.totalClaimed?.toFixed(2) || '0.00'}
+              {rewardStats?.totalClaimed ? parseFloat(rewardStats.totalClaimed).toFixed(2) : '0.00'}
             </div>
             <div className="text-xs text-white/60 mb-1">
               Total claimed

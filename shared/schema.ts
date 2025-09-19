@@ -63,6 +63,8 @@ export const rewards = pgTable("rewards", {
   dailyRewardAmount: decimal("daily_reward_amount", { precision: 30, scale: 8 }).notNull(),
   accumulatedAmount: decimal("accumulated_amount", { precision: 30, scale: 8 }).notNull(),
   claimedAmount: decimal("claimed_amount", { precision: 30, scale: 8 }).default("0"),
+  baseAPR: decimal("base_apr", { precision: 20, scale: 12 }).default("0"),
+  effectiveAPR: decimal("effective_apr", { precision: 20, scale: 12 }).default("0"),
   liquidityAddedAt: timestamp("liquidity_added_at").notNull(), // When liquidity was first added to pool
   stakingStartDate: timestamp("staking_start_date").defaultNow().notNull(), // When NFT staking for rewards started
   lastRewardCalculation: timestamp("last_reward_calculation").defaultNow().notNull(),
@@ -353,6 +355,8 @@ export const insertRewardSchema = createInsertSchema(rewards).pick({
   positionValueUSD: true,
   dailyRewardAmount: true,
   accumulatedAmount: true,
+  baseAPR: true,
+  effectiveAPR: true,
   liquidityAddedAt: true,
   stakingStartDate: true,
 });
