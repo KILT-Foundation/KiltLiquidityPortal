@@ -133,85 +133,73 @@ export function GasEstimationCard() {
 
   return (
     <Card className="bg-black/40 backdrop-blur-sm border border-gray-800 rounded-lg cluely-card">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 bg-black mb-2 border-b border-gray-800">
         <CardTitle className="text-super-bright text-sm flex items-center gap-2">
           <Zap className="h-3 w-3 text-matrix-green" />
-          Transaction Cost & Returns
+          Transaction Cost & <TrendingUp className="h-3 w-3 text-purple-400" /> Returns
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 space-y-3">
-        {/* Transaction Costs */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-bright text-xs">Token Approval</span>
-            <span className="text-super-bright text-xs font-semibold">
-              ~{gasEstimate.approve.cost} ETH
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-bright text-xs">Add Liquidity</span>
-            <span className="text-super-bright text-xs font-semibold">
-              ~{gasEstimate.mint.cost} ETH
-            </span>
-          </div>
-          <div className="border-t border-white/10 pt-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Left: Transaction Costs */}
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-super-bright font-semibold text-xs">Total Cost</span>
-              <span className="text-matrix-bright font-bold text-xs">
-                ~{gasEstimate.total.cost} ETH
-              </span>
+              <span className="text-bright text-xs">Token Approval</span>
+              <span className="text-super-bright text-xs font-semibold">~{gasEstimate.approve.cost} ETH</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-bright text-xs">Add Liquidity</span>
+              <span className="text-super-bright text-xs font-semibold">~{gasEstimate.mint.cost} ETH</span>
+            </div>
+            <div className="border-t border-white/10 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-super-bright font-semibold text-xs">Total Cost</span>
+                <span className="text-matrix-bright font-bold text-xs">~{gasEstimate.total.cost} ETH</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Expected Returns Section */}
-        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg p-2 border border-purple-500/20">
-          <div className="flex items-center gap-2 mb-1.5">
-            <TrendingUp className="h-3 w-3 text-purple-400" />
-            <span className="text-purple-300 text-xs font-medium">Expected Returns</span>
-          </div>
-          
-          <div className="space-y-1">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-white/70">Trading Fees APR</span>
-              <span className="text-green-400 font-mono">~{expectedReturns?.tradingAPR || '0.00'}%</span>
-            </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-white/70">KILT Rewards APR</span>
-              <span className="text-green-400 font-mono">~{expectedReturns?.incentiveAPR || '0.00'}%</span>
-            </div>
-            <div className="border-t border-purple-300/20 pt-1">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-purple-300 font-medium">Total APR</span>
-                <span className="text-pink-400 font-mono font-bold">~{expectedReturns?.totalAPR || '0.00'}%</span>
+          {/* Right: Expected Returns */}
+          <div className="space-y-3">
+            <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg p-2 border border-purple-500/20">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-white/70">Trading Fees APR</span>
+                  <span className="text-green-400 font-mono">~{expectedReturns?.tradingAPR || '0.00'}%</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-white/70">KILT Rewards APR</span>
+                  <span className="text-green-400 font-mono">~{expectedReturns?.incentiveAPR || '0.00'}%</span>
+                </div>
+                <div className="border-t border-purple-300/20 pt-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-purple-300 font-medium">Total APR</span>
+                    <span className="text-pink-400 font-mono font-bold">~{expectedReturns?.totalAPR || '0.00'}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Break-even Analysis */}
+        {/* Full-width Break-even Analysis */}
         <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg p-2 border border-blue-500/20">
           <div className="flex items-center gap-2 mb-1.5">
             <Clock className="h-3 w-3 text-blue-400" />
             <span className="text-blue-300 text-xs font-medium">Break-even Time</span>
           </div>
-          
           <div className="text-xs text-white/70">
             <div className="flex justify-between items-center mb-1">
               <span>Cost recovered in:</span>
-              <span className="text-cyan-400 font-mono">
-                ~{breakEvenDays.toFixed(1)} days
-              </span>
+              <span className="text-cyan-400 font-mono">~{breakEvenDays.toFixed(1)} days</span>
             </div>
-            <div className="text-xs text-blue-300/70">
-              Based on $1K position & current APR on Base network
-            </div>
+            <div className="text-xs text-blue-300/70">Based on $1K position & current APR on Base network</div>
           </div>
         </div>
-        
-        {/* Network & Speed Tags */}
+
+        {/* Full-width Network & Speed Tags */}
         <div className="flex items-center gap-2">
-          <Badge className="inline-flex items-center rounded-full font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-[12px] from-pink-500 to-pink-600 shadow-soft-modern hover:from-pink-400 hover:to-pink-500 hover:shadow-medium-modern bg-[#ff0066]/20 border border-[#ff0066]/50 px-2 py-0.5 text-xs text-[#e6e8ec]">
+          <Badge className="inline-flex items-center rounded-full font-bold transition-all duration-200 backdrop-blur-[12px] bg-[#ff0066]/20 border border-[#ff0066]/50 px-2 py-0.5 text-xs text-[#e6e8ec]">
             <Clock className="h-2 w-2 mr-1" />
             Base Network
           </Badge>

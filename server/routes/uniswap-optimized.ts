@@ -57,10 +57,15 @@ export function registerUniswapOptimizedRoutes(app: Express) {
         console.log(`🔧 Position Count Debug: Total registered: ${registeredPositions.length}, Active: ${activeRegisteredCount}`);
       }
       
-      // Filter unregistered positions
-      const eligiblePositions = kiltPositions.filter(pos => 
-        !registeredIds.has(pos.tokenId) && pos.isActive
-      );
+      // Filter unregistered positions with range guardrails
+      const eligiblePositions = kiltPositions.filter(pos => {
+        if (registeredIds.has(pos.tokenId)) return false;
+        if (!(pos.isActive)) return false;
+
+        const lowerOk = typeof pos.tickLower === 'number' ? pos.tickLower > -887000 : false;
+        const upperOk = typeof pos.tickUpper === 'number' ? pos.tickUpper < 887000 : false;
+        return lowerOk && upperOk;
+      });
 
       const duration = Date.now() - start;
       

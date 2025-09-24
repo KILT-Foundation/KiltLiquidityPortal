@@ -291,6 +291,23 @@ export function MainDashboard() {
     );
   };
 
+  // Program settings: fetch minimumPositionValue for enforcement
+  const [minPositionUSD, setMinPositionUSD] = useState<number>(10);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/program/settings');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && typeof data.minimumPositionValue === 'number') {
+          setMinPositionUSD(data.minimumPositionValue);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Quick Add Liquidity with actual token approval and position minting
   const handleQuickAddLiquidity = async () => {
     if (!address || isMinting || !walletClient) return;
@@ -307,12 +324,23 @@ export function MainDashboard() {
     try {
       
       const amounts = calculateOptimalAmounts();
-      const hasInsufficientBalance = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0 || parseFloat(amounts.totalValue) < 2;
-      
-      if (hasInsufficientBalance) {
+      const totalUSD = parseFloat(amounts.totalValue);
+      const balanceFail = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0;
+      const minFail = totalUSD < minPositionUSD;
+
+      if (balanceFail) {
         toast({
           title: "Insufficient Balance",
-          description: "You need both KILT and ETH tokens to add liquidity",
+          description: "You need both KILT and ETH to add liquidity",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (minFail) {
+        toast({
+          title: "Minimum Position Value",
+          description: `Your position must be at least ${minPositionUSD}. Current: ${isFinite(totalUSD) ? totalUSD.toFixed(2) : '0.00'}`,
           variant: "destructive"
         });
         return;
@@ -971,7 +999,8 @@ export function MainDashboard() {
                         </div>
                         {(() => {
                           const amounts = calculateOptimalAmounts();
-                          const hasInsufficientBalance = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0 || parseFloat(amounts.totalValue) < 2;
+                          const totalUSD = parseFloat(amounts.totalValue);
+                          const hasInsufficientBalance = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0;
                           
                           if (hasInsufficientBalance) {
                             return (
@@ -981,12 +1010,21 @@ export function MainDashboard() {
                               </div>
                             );
                           }
+                          if (totalUSD < minPositionUSD) {
+                            return (
+                              <div className="text-center py-2">
+                                <div className="text-sm font-medium text-red-400 mb-1 text-label">Minimum Position Value</div>
+                                <p className="text-white/60 text-xs text-body">Your position must be at least ${minPositionUSD}. Current: ${isFinite(totalUSD) ? totalUSD.toFixed(2) : '0.00'}</p>
+                              </div>
+                            );
+                          }
                           
                           return (
                             <div>
                               <div className="text-2xl font-bold text-[#ff0066] text-numbers mb-2" style={{ textShadow: '0 0 20px rgba(255, 0, 102, 0.6)' }}>
                                 ~${amounts.totalValue}
                               </div>
+                              <div className="text-[10px] text-white/60 text-center mb-1">Minimum required: ${minPositionUSD}</div>
                               <div className="flex items-center justify-center space-x-4 text-white text-sm text-body">
                                 <div className="flex items-center space-x-2">
                                   <div className="w-6 h-6 bg-gradient-to-br from-[#ff0066]/30 to-[#ff0066]/30 rounded-full flex items-center justify-center border border-[#ff0066]/50">
@@ -1013,15 +1051,17 @@ export function MainDashboard() {
                       {/* Action Button */}
                       {(() => {
                         const amounts = calculateOptimalAmounts();
-                        const hasInsufficientBalance = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0 || parseFloat(amounts.totalValue) < 2;
-                        const isDisabled = isMinting || !address || hasInsufficientBalance;
+                        const totalUSD = parseFloat(amounts.totalValue);
+                        const balanceFail = parseFloat(amounts.kiltAmount) <= 0 || parseFloat(amounts.ethAmount) <= 0;
+                        const minFail = totalUSD < minPositionUSD;
+                        const isDisabled = isMinting || !address || balanceFail || minFail;
                         
                         return (
                           <Button 
                             onClick={handleQuickAddLiquidity}
                             disabled={isDisabled}
                             className={`mobile-button-fix w-full font-semibold py-1.5 h-8 sm:h-9 rounded-lg transition-all duration-300 text-sm ${
-                              hasInsufficientBalance 
+                              balanceFail || minFail
                                 ? 'theme-badge-danger cursor-not-allowed' 
                                 : 'theme-button-primary'
                             }`}
@@ -1031,10 +1071,15 @@ export function MainDashboard() {
                                 <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
                                 Processing...
                               </>
-                            ) : hasInsufficientBalance ? (
+                            ) : balanceFail ? (
                               <>
                                 <Wallet className="h-3 w-3 mr-1.5" />
                                 Fund Wallet
+                              </>
+                            ) : minFail ? (
+                              <>
+                                <TrendingUp className="h-3 w-3 mr-1.5" />
+                                Increase Amount
                               </>
                             ) : (
                               <>

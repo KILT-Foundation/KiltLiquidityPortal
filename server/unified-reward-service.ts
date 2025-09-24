@@ -371,7 +371,7 @@ export class UnifiedRewardService {
 
       // Get claimed amount from database and position calculations in parallel
       const [claimedAmount, positionRewards] = await Promise.all([
-        this.getClaimedAmountFromDatabase(walletAddress),
+        Promise.resolve(this.getClaimedAmountFromDatabase(walletAddress)),
         Promise.all(activePositions.map((position: any) => 
           this.getPositionRewardFromStoredData(position)
         ))
@@ -674,7 +674,7 @@ export class UnifiedRewardService {
       const totalClaimed = result?.totalClaimed || 0;
       console.log(`💰 Database claims for user ${user.id} (${walletAddress}): ${totalClaimed} KILT`);
       
-      return totalClaimed;
+      return Number(totalClaimed);
     } catch (error) {
       console.error(`❌ Error getting claimed amount from database for ${walletAddress}:`, error);
       return 0;

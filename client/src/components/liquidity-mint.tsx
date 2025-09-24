@@ -81,6 +81,21 @@ export function LiquidityMint({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch program settings (minimumPositionValue)
+  const [minPositionUSD, setMinPositionUSD] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/program/settings');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setMinPositionUSD(typeof data.minimumPositionValue === 'number' ? data.minimumPositionValue : null);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Helper function to parse token amounts
   const parseTokenAmount = (amount: string, decimals: number = 18): bigint => {
     try {
@@ -444,6 +459,20 @@ export function LiquidityMint({
 
     try {
       // Enhanced validation before transaction
+      // Enforce minimum USD value from program settings
+      const kiltPriceUSD = kiltData?.price || 0;
+      const ethPriceUSD = ethPriceData?.ethPrice || 0;
+      const totalUSD = (parseFloat(kiltAmount || '0') * kiltPriceUSD) + (parseFloat(ethAmount || '0') * ethPriceUSD);
+      const minUSD = (minPositionUSD ?? 10);
+      if (totalUSD < minUSD) {
+        toast({
+          title: "Minimum Position Value",
+          description: `Your position value is $${totalUSD.toFixed(2)}. Minimum required is $${minUSD}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (parseFloat(kiltAmount) <= 0 || parseFloat(ethAmount) <= 0) {
         toast({
           title: "Invalid Amounts",
@@ -712,7 +741,7 @@ export function LiquidityMint({
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <div className="bg-[#ff0066]/20 border border-[#ff0066]/50 text-xs rounded-lg px-2 py-1 text-[#ffffff]">
             <Info className="h-3 w-3 inline mr-1" />
-            Minimum position value: $10 (anti-spam protection)
+            Minimum position value: ${minPositionUSD ?? 10}
           </div>
           <Badge className="inline-flex items-center rounded-full font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-[12px] from-pink-500 to-pink-600 shadow-soft-modern hover:from-pink-400 hover:to-pink-500 hover:shadow-medium-modern bg-[#ff0066]/20 border border-[#ff0066]/50 px-2 py-0.5 text-xs text-[#e6e8ec]">
             0.3% Fee Tier
@@ -912,132 +941,7 @@ export function LiquidityMint({
           </CardContent>
         </Card>
       </div>
-      {/* Side-by-Side Layout for Price Range Strategy and Transaction Cost */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {/* Price Range Strategy */}
-        <Card className="bg-black/40 backdrop-blur-sm border border-gray-800 rounded-lg cluely-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center gap-2">
-              <Zap className="h-3 w-3 text-pink-400" />
-              Price Range Strategy
-              {getSelectedStrategy().recommended && (
-                <Badge className="bg-emerald-500/20 text-emerald-300 text-xs border-emerald-500/30">Recommended</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 p-3">
-            <div className="grid grid-cols-2 gap-2">
-              {priceStrategies.map((strategy) => (
-                <Button
-                  key={strategy.id}
-                  variant={selectedStrategy === strategy.id ? "default" : "outline"}
-                  onClick={() => setSelectedStrategy(strategy.id)}
-                  className={`h-16 p-3 flex flex-col items-start justify-center w-full transition-all duration-300 ${
-                    selectedStrategy === strategy.id 
-                      ? 'text-white' 
-                      : 'hover:bg-pink-500/10 hover:border-pink-500/50'
-                  }`}
-                  style={selectedStrategy === strategy.id ? { backgroundColor: '#ff0066' } : {}}
-                >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-bold text-sm">{strategy.label}</span>
-                    {strategy.recommended && selectedStrategy === strategy.id && (
-                      <div className="ml-1 px-1 py-0.5 bg-emerald-400 text-white text-xs rounded-full font-bold">
-                        ✓
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-left opacity-80 w-full">
-                    {strategy.id === 'balanced' ? '50% to 150%' :
-                     strategy.id === 'wide' ? '0% to 200%' :
-                     strategy.id === 'narrow' ? '75% to 125%' :
-                     'Full range'}
-                  </p>
-                </Button>
-              ))}
-            </div>
-            
-            {/* Dynamic Price Range Preview */}
-            <div className="mt-3 p-2 bg-white/5 rounded-lg border border-white/10">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/60">Selected Range</span>
-                <span className="text-white">{getSelectedStrategy().label}</span>
-              </div>
-              <div className="mt-1 text-xs text-white/60">
-                {getSelectedStrategy().risk}
-              </div>
-              
-              {/* Live Price Range Display */}
-              <div className="mt-2 pt-2 border-t border-white/5">
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-white/60 font-medium">Price Range</span>
-                  <span className="text-white font-mono font-bold text-right">
-                    {getSelectedStrategy().range === Infinity ? (
-                      "Full range (0 to ∞)"
-                    ) : kiltData?.price ? (
-                      `$${(kiltData.price * (1 - getSelectedStrategy().range)).toFixed(4)} - $${(kiltData.price * (1 + getSelectedStrategy().range)).toFixed(4)}`
-                    ) : (
-                      "Loading..."
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-white/60 font-medium">Current KILT</span>
-                  <span className="text-white font-mono font-bold">
-                    ${kiltData?.price?.toFixed(4) || 'Loading...'}
-                  </span>
-                </div>
-                
-                {/* Visual Price Range Indicator */}
-                {kiltData?.price && getSelectedStrategy().range !== Infinity && (
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between text-xs text-white/40 mb-1">
-                      <span>Min</span>
-                      <span>Current</span>
-                      <span>Max</span>
-                    </div>
-                    <div className="relative h-2 bg-gray-800 rounded-full overflow-hidden">
-                      <div 
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#ff0066] to-[#ff0066] rounded-full"
-                        style={{
-                          left: '0%',
-                          width: '100%',
-                          opacity: 0.6
-                        }}
-                      />
-                      <div 
-                        className="absolute top-0 h-full w-1 bg-white rounded-full"
-                        style={{
-                          left: '50%',
-                          transform: 'translateX(-50%)'
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-center mt-1">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Full Range Indicator */}
-                {getSelectedStrategy().range === Infinity && (
-                  <div className="mt-2">
-                    <div className="flex items-center justify-center text-xs text-white/40 mb-1">
-                      <span>Always in range</span>
-                    </div>
-                    <div className="relative h-2 bg-gradient-to-r from-[#ff0066] to-[#ff0066] rounded-full overflow-hidden opacity-60">
-                      <div className="absolute top-0 left-0 h-full w-full bg-gradient-to-r from-[#ff0066] to-[#ff0066] rounded-full animate-pulse"></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Gas Estimation */}
-        <GasEstimationCard />
-      </div>
+      <GasEstimationCard />
       {/* Compact Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Button
