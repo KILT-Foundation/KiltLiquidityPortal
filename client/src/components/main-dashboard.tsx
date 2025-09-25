@@ -828,14 +828,14 @@ export function MainDashboard() {
             </div>
 
             {/* Two Column Layout - Mobile Stack, Desktop Side-by-Side */}
-            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6">
+            <div className="flex flex-col lg:grid lg:grid-cols-2 lg:items-stretch gap-6">
               {/* Left Column - Position Registration */}
               <div className="space-y-4 order-2 lg:order-1">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-3">
                   <Plus className="h-4 w-4" style={{ color: '#ff0066' }} />
                   <span>Register Positions</span>
                 </h2>
-                <div className="min-h-[300px] sm:min-h-[350px] lg:h-[520px] flex flex-col">
+                <div className="min-h-[300px] sm:min-h-[350px] lg:h-[560px] flex flex-col">
                   <PositionRegistration />
                 </div>
               </div>
@@ -846,7 +846,7 @@ export function MainDashboard() {
                   <Zap className="h-4 w-4" style={{ color: '#ff0066' }} />
                   <span>Quick Add Liquidity</span>
                 </h2>
-                <Card className="mobile-card-fix bg-black/40 backdrop-blur-sm border border-gray-800 rounded-lg flex flex-col cluely-card">
+                <Card className="mobile-card-fix bg-black/40 backdrop-blur-sm border border-gray-800 rounded-lg flex flex-col h-full lg:h-[560px] cluely-card">
                   <CardContent className="mobile-card-content p-3 sm:p-4 flex flex-col gap-4">
                     <div className="space-y-3">
                       {/* Balance Display */}
@@ -995,7 +995,6 @@ export function MainDashboard() {
                       <div className="theme-card p-3 cluely-card">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-white text-sm font-medium text-label">Liquidity Amount</span>
-                          <span className="text-sm text-white/80 text-body">Balanced strategy</span>
                         </div>
                         {(() => {
                           const amounts = calculateOptimalAmounts();
