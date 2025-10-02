@@ -2049,10 +2049,25 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
         }
       }
       
+      // Check if treasury has remaining balance and program is still active
+      let treasuryHasBalance = true;
+      let programIsActive = true;
+      try {
+        const { unifiedRewardService } = await import('./unified-reward-service');
+        const programAnalytics = await unifiedRewardService.getProgramAnalytics();
+        treasuryHasBalance = (programAnalytics.treasuryRemaining || 0) > 0;
+        programIsActive = (programAnalytics.daysRemaining || 0) > 0;
+        console.log(`💰 Program status check: TreasuryRemaining=${programAnalytics.treasuryRemaining}, DaysRemaining=${programAnalytics.daysRemaining}, TreasuryHasBalance=${treasuryHasBalance}, ProgramIsActive=${programIsActive}`);
+      } catch (error) {
+        console.warn('Failed to check program status, allowing claim:', error);
+        treasuryHasBalance = true; // Default to allowing claims if check fails
+        programIsActive = true;
+      }
+      
       // UI displays: accumulated rewards that WILL be claimable (regardless of lock)
-      // Claim action: only allowed when lock period expired AND rewards > 0
+      // Claim action: only allowed when lock period expired AND rewards > 0 AND treasury has balance AND program is active
       const displayClaimable = actualClaimable; // Always show accumulating amount
-      const claimActionAllowed = canClaim && actualClaimable > 0; // Only allow claim after lock
+      const claimActionAllowed = canClaim && actualClaimable > 0 && treasuryHasBalance && programIsActive; // Only allow claim after lock, when treasury has balance, and program is active
       
       console.log(`✅ FIXED claimability logic: canClaim=${canClaim}, totalAccumulated=${totalAccumulated}, displayClaimable=${displayClaimable}, claimActionAllowed=${claimActionAllowed}, lockPeriod=${effectiveLockHours}h`);
       

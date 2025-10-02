@@ -603,7 +603,7 @@ export class UnifiedRewardService {
     }
     // Get dynamic admin configuration instead of hardcoded values
     const adminConfig = await this.getAdminConfiguration();
-    const treasuryRemaining = adminConfig.treasuryAllocation - actualTotalDistributed;
+    const treasuryRemaining = Math.max(0, adminConfig.treasuryAllocation - actualTotalDistributed);
     
     // Calculate days remaining based on actual program start date from admin config
     const now = new Date();

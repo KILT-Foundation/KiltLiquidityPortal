@@ -775,7 +775,7 @@ export function RewardsTracking() {
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/60">Days Remaining:</span>
-                  <span className="text-white">{programAnalytics?.daysRemaining || 57} days</span>
+                  <span className="text-white">{programAnalytics?.daysRemaining !== undefined ? programAnalytics.daysRemaining : '...'} days</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/60">Treasury Value:</span>
