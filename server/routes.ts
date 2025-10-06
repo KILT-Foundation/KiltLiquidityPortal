@@ -2065,9 +2065,10 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       }
       
       // UI displays: accumulated rewards that WILL be claimable (regardless of lock)
-      // Claim action: only allowed when lock period expired AND rewards > 0 AND treasury has balance AND program is active
+      // Claim action: allow when lock period expired AND rewards > 0
+      // Do not block claims based on treasury/program analytics, which can be stale or unrelated to contract balance
       const displayClaimable = actualClaimable; // Always show accumulating amount
-      const claimActionAllowed = canClaim && actualClaimable > 0 && treasuryHasBalance && programIsActive; // Only allow claim after lock, when treasury has balance, and program is active
+      const claimActionAllowed = canClaim && actualClaimable > 0;
       
       console.log(`✅ FIXED claimability logic: canClaim=${canClaim}, totalAccumulated=${totalAccumulated}, displayClaimable=${displayClaimable}, claimActionAllowed=${claimActionAllowed}, lockPeriod=${effectiveLockHours}h`);
       
