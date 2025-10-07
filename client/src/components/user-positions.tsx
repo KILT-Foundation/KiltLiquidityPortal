@@ -293,7 +293,7 @@ export function UserPositions() {
                 </CardTitle>
                 <div className="flex items-center space-x-4 text-sm">
                   <div className="flex items-center space-x-2">
-                    <span className="text-white/60">Real-time Uniswap V3 positions containing KILT token</span>
+                    <span className="text-white/60">Real-time Uniswap v3 positions containing KILT token</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <TrendingUp className="h-3 w-3 text-[#ff0066]" />

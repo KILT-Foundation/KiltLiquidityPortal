@@ -66,6 +66,7 @@ const OptimizedLoadingFallback = ({ height = "400px" }) => (
 
 // Assets and icons
 import kiltLogo from '@assets/KILT_400x400_transparent_1751723574123.png';
+import kiltWordmark from '@assets/KILT_wordmark_white.png';
 import backgroundVideo from '@assets/Untitled design (22)_1752822331413.mp4';
 import { SiX, SiGithub, SiDiscord, SiTelegram, SiMedium } from 'react-icons/si';
 
@@ -484,11 +485,11 @@ export function MainDashboard() {
               <div className="mb-8">
                 {/* Main title with subtle gradient */}
                 <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-white mb-6 leading-tight tracking-tight">
-                  <span className="block bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-                    KILT Liquidity
+                  <span className="block">
+                    <img src={kiltWordmark} alt="KILT" className="h-10 sm:h-12 object-contain mx-auto" />
                   </span>
                   <span className="block text-5xl sm:text-6xl lg:text-7xl mt-2 text-white/90 font-normal">
-                    Incentive Program
+                  Liquidity Incentive Program
                   </span>
                 </h1>
               </div>
@@ -496,7 +497,7 @@ export function MainDashboard() {
               {/* Clean Description */}
               <div className="relative max-w-4xl mx-auto mb-8">
                 <p className="text-xl sm:text-2xl text-white/90 font-medium leading-relaxed text-center">
-                  Earn <span className="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded">{unifiedData.programAnalytics?.programAPR ? `${Math.round(unifiedData.programAnalytics.programAPR)}%` : '...'} APR</span> from the <span className="text-pink-400 font-bold bg-pink-400/10 px-2 py-1 rounded">{unifiedData.programAnalytics?.treasuryTotal ? (unifiedData.programAnalytics.treasuryTotal >= 1000000 ? `${(unifiedData.programAnalytics.treasuryTotal / 1000000).toFixed(1)}M` : `${(unifiedData.programAnalytics.treasuryTotal / 1000).toFixed(0)}K`) : '...'} KILT treasury</span> by providing liquidity to Uniswap V3 pools on Base network.
+                  Earn up to <span className="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded">{unifiedData.programAnalytics?.programAPR ? `${Math.round(unifiedData.programAnalytics.programAPR)}%` : '...'} APR</span> by providing liquidity to the KILT Uniswap pool on Base.
                 </p>
               </div>
             </div>
@@ -515,11 +516,11 @@ export function MainDashboard() {
                 <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:border-emerald-500/30 hover:bg-black/60 h-[180px] flex flex-col">
                   <div className="flex items-center mb-4">
                     <TrendingUp className="h-6 w-6 text-emerald-400 mr-3" />
-                    <h3 className="text-white font-bold text-lg">KILT/ETH Pool</h3>
+                    <h3 className="text-white font-bold text-lg">Deploy</h3>
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      Deploy capital efficiently with concentrated liquidity positions and advanced range strategies.
+                      Add liquidity to the official KILT/ETH pool on Uniswap.
                     </p>
                   </div>
                 </div>
@@ -530,11 +531,11 @@ export function MainDashboard() {
                 <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:border-pink-500/30 hover:bg-black/60 h-[180px] flex flex-col">
                   <div className="flex items-center mb-4">
                     <Award className="h-6 w-6 text-pink-400 mr-3" />
-                    <h3 className="text-white font-bold text-lg">Treasury Rewards</h3>
+                    <h3 className="text-white font-bold text-lg">Earn</h3>
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      Receive attractive rewards from <span className="text-pink-400 font-semibold">{unifiedData?.programAnalytics?.treasuryTotal ? (unifiedData.programAnalytics.treasuryTotal >= 1000000 ? `${(unifiedData.programAnalytics.treasuryTotal / 1000000).toFixed(1)}M KILT` : `${(unifiedData.programAnalytics.treasuryTotal / 1000).toFixed(0)}K KILT`) : '500K KILT'}</span> treasury allocation with secure smart contract distribution.
+                      Accumulate rewards, with secure smart-contract distribution.
                     </p>
                   </div>
                 </div>
@@ -545,25 +546,15 @@ export function MainDashboard() {
                 <div className="relative bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-6 transition-all duration-300 hover:border-blue-500/30 hover:bg-black/60 h-[180px] flex flex-col">
                   <div className="flex items-center mb-4">
                     <BarChart3 className="h-6 w-6 text-blue-400 mr-3" />
-                    <h3 className="text-white font-bold text-lg">Program Analytics</h3>
+                    <h3 className="text-white font-bold text-lg">Track</h3>
                   </div>
                   <div className="flex-1 flex flex-col justify-center">
                     <p className="text-gray-300 text-sm leading-relaxed">
-                      Track your position performance, rewards earned, and program progress with detailed analytics.
+                      Monitor position performance, rewards, and bonuses, with detailed analytics.
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Bottom CTA */}
-            <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-                Join the KILT Ecosystem
-              </h2>
-              <p className="text-white/80 text-lg font-medium max-w-2xl mx-auto mb-6 leading-relaxed">
-                Connect with the KILT Protocol community and stay updated on the latest developments.
-              </p>
             </div>
 
             {/* Clean Social Media Links */}
@@ -644,9 +635,12 @@ export function MainDashboard() {
               <CyberpunkKiltLogo size="sm" className="w-full h-full" />
             </div>
             <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                KILT Liquidity Portal
-              </h1>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <img src={kiltWordmark} alt="KILT" className="h-8 sm:h-9 object-contain" />
+                <span className="text-xl sm:text-2xl font-bold text-white leading-tight">
+                  Liquidity Portal
+                </span>
+              </div>
             </div>
           </div>
           
@@ -657,6 +651,25 @@ export function MainDashboard() {
         </div>
 
         {/* Enhanced Navigation Tabs */}
+        {(() => {
+          // Allow child components to request tab switches via a window event
+          // Event name: 'portal:switch-tab' with detail: { tab: string }
+          // This is scoped here so it can access setActiveTab without prop drilling
+          // Listener is idempotent; re-registering replaces the same handler reference
+          // and is cleaned up on unmount
+          const handler = (e: Event) => {
+            const custom = e as CustomEvent<{ tab?: string }>;
+            const requested = custom.detail?.tab;
+            if (requested && typeof requested === 'string') {
+              setActiveTab(requested);
+            }
+          };
+          if (typeof window !== 'undefined') {
+            window.removeEventListener('portal:switch-tab', handler as EventListener);
+            window.addEventListener('portal:switch-tab', handler as EventListener);
+          }
+          return null;
+        })()}
         <Tabs value={activeTab} onValueChange={(value) => {
           setActiveTab(value);
           // Invalidate positions cache when switching to positions tab
@@ -801,9 +814,6 @@ export function MainDashboard() {
                   <div className="text-white text-base font-bold mb-1 numeric-large">
                     <TradingFeesAPR />
                   </div>
-                  <div className="text-white/50 text-xs font-medium">
-                    DexScreener API
-                  </div>
                 </div>
               </div>
 
@@ -819,9 +829,6 @@ export function MainDashboard() {
                   </div>
                   <div className="text-white text-base font-bold mb-1 numeric-large">
                     <PoolWideProgramAPR />
-                  </div>
-                  <div className="text-white/50 text-xs font-medium">
-                    Treasury rewards
                   </div>
                 </div>
               </div>

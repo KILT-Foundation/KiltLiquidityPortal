@@ -649,11 +649,7 @@ export function RewardsTracking() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-white/60">Lock Period:</span>
-                <span className="text-white">Smart contract secured</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-white/60">Claim Type:</span>
-                <span className="text-white">Rolling unlocks</span>
+                <span className="text-white">First 24hrs</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-white/60">Network:</span>

@@ -499,22 +499,6 @@ export function UniswapStyleLiquidityModal({
                 </div>
               </div>
 
-              {/* Add as ETH Toggle */}
-              <div className="flex items-center justify-between bg-black/20 backdrop-blur-sm rounded-lg p-3 border border-gray-700/60">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Add as ETH</span>
-                  <Info className="w-4 h-4 text-gray-400" />
-                </div>
-                <Button
-                  variant={addAsEth ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setAddAsEth(!addAsEth)}
-                  className="h-8 px-3"
-                >
-                  {addAsEth ? "ETH" : "WETH"}
-                </Button>
-              </div>
-
               {/* Position Preview */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
