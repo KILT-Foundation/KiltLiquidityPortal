@@ -18,7 +18,6 @@ interface CachedData {
   dailyBudget: number;
   treasuryAllocation: number;
   programDurationDays: number;
-  programStartDate: Date;
   totalDistributed?: number;
   timestamp: number;
 }
@@ -102,7 +101,6 @@ export class UnifiedRewardService {
         dailyBudget: config.dailyBudget,
         treasuryAllocation: config.treasuryAllocation,
         programDurationDays: config.programDurationDays,
-        programStartDate: config.programStartDate,
         timestamp: Date.now()
       };
 
@@ -127,7 +125,6 @@ export class UnifiedRewardService {
         dailyBudget: 25000,
         treasuryAllocation: 1500000,
         programDurationDays: fallbackProgramDuration,
-        programStartDate: new Date('2024-01-01'),
         timestamp: Date.now()
       };
 
@@ -272,27 +269,6 @@ export class UnifiedRewardService {
     marketData: CachedData,
     createdAt: Date
   ): PositionReward {
-    // Stop accrual if program ended or treasury exhausted (uses cached analytics when available)
-    try {
-      const analytics = this.cache.get('program_analytics');
-      const treasuryRemaining = Number(analytics?.treasuryRemaining || 0);
-      const daysRemaining = Number(analytics?.daysRemaining || 0);
-      if (treasuryRemaining <= 0 || daysRemaining <= 0) {
-        const currentValueUSD = parseFloat(position.currentValueUSD || '0');
-        return {
-          nftTokenId: position.nftTokenId,
-          dailyRewards: 0,
-          accumulatedRewards: 0,
-          hourlyRewards: 0,
-          totalHours: 0,
-          liquidityAmount: currentValueUSD,
-          baseAPR: 0,
-          effectiveAPR: 0,
-          tradingFeeAPR: marketData.tradingAPR,
-          incentiveAPR: marketData.programAPR,
-        };
-      }
-    } catch {}
     const now = new Date();
     const currentValueUSD = parseFloat(position.currentValueUSD || '0');
     
@@ -328,11 +304,7 @@ export class UnifiedRewardService {
     // CORE CALCULATION: R_u = (L_u/L_T) × (1 + ((D_u/P) × b_time)) × IRM × FRB × (R/P)
     // L_T is now the In Range Pool Size (sum of registered in-range NFTs' values) instead of overall pool TVL
     const liquidityRatio = L_u / L_T;
-    
-    // Calculate time boost based on program participation time, not total position age
-    const programStartDate = new Date(marketData.programStartDate || new Date('2024-01-01'));
-    const programParticipationDays = Math.max(0, Math.floor((now.getTime() - Math.max(programStartDate.getTime(), createdAt.getTime())) / (1000 * 60 * 60 * 24)));
-    const currentTimeBoost = 1 + ((programParticipationDays / P) * b_time);
+    const currentTimeBoost = 1 + ((D_u / P) * b_time);
     
     // DAILY RATE: Use current time boost for accurate "today's rate" display
     const dailyRewards = liquidityRatio * currentTimeBoost * IRM * FRB * R_P;
@@ -346,14 +318,14 @@ export class UnifiedRewardService {
     
     // Calculate accumulated rewards hour by hour with proper time boost integration
     // For performance, we'll use daily chunks since time boost changes slowly
-    for (let dayIndex = 0; dayIndex < Math.ceil(programParticipationDays); dayIndex++) {
-      const dayProgress = dayIndex / P; // Days since program start / Program duration
+    for (let dayIndex = 0; dayIndex < Math.ceil(positionAgeDays); dayIndex++) {
+      const dayProgress = dayIndex / P; // Days since creation / Program duration
       const dayTimeBoost = 1 + (dayProgress * b_time);
       const dayRate = baseHourlyRate * dayTimeBoost;
       
       // For partial last day, only count actual hours
-      const hoursInThisDay = dayIndex === Math.floor(programParticipationDays) 
-        ? ((programParticipationDays - dayIndex) * 24) 
+      const hoursInThisDay = dayIndex === Math.floor(positionAgeDays) 
+        ? ((positionAgeDays - dayIndex) * 24) 
         : 24;
       
       totalAccumulatedSinceCreation += dayRate * hoursInThisDay;

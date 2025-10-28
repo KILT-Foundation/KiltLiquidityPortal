@@ -47,33 +47,6 @@ export class DailyRewardAccrualService {
       programDurationDays: number;
     }
   ): Promise<DailyRewardCalculation> {
-    // Hard stop: if program is over or treasury is empty, no rewards accrue
-    try {
-      const programAnalytics = await unifiedRewardService.getProgramAnalytics();
-      const treasuryRemaining = Number(programAnalytics?.treasuryRemaining || 0);
-      const daysRemaining = Number(programAnalytics?.daysRemaining || 0);
-      if (treasuryRemaining <= 0 || daysRemaining <= 0) {
-        return {
-          date: date.toISOString().split('T')[0],
-          positionId: position.id,
-          nftTokenId: position.nftTokenId,
-          userId: position.userId,
-          positionValueUSD: parseFloat(position.currentValueUSD || '0'),
-          dailyBudget: config.dailyBudget,
-          inRangePoolSize: config.inRangePoolSize,
-          liquidityRatio: 0,
-          timeMultiplier: 0,
-          inRangeMultiplier: 0,
-          fullRangeBonus: config.fullRangeBonus,
-          dailyRewardAmount: 0,
-          daysStaked: 0,
-          baseAPR: 0,
-          effectiveAPR: 0,
-        };
-      }
-    } catch {
-      // If analytics fails, continue with normal calculation
-    }
     
     // Get position's actual in-range status for this date
     const positionData = await uniswapIntegrationService.getFullPositionData(position.nftTokenId);
@@ -84,13 +57,8 @@ export class DailyRewardAccrualService {
     const positionCreatedAt = new Date(position.createdAt);
     const daysStaked = Math.max(0, Math.floor((date.getTime() - positionCreatedAt.getTime()) / (1000 * 60 * 60 * 24)));
     const totalPoolTVL = await unifiedRewardService.getPoolTVL();
-    
-    // Calculate time multiplier based on program participation time, not total position age
-    // Get program start date from admin config
-    const [treasuryConfigData] = await db.select().from(treasuryConfig).limit(1);
-    const programStartDate = treasuryConfigData?.programStartDate ? new Date(treasuryConfigData.programStartDate) : new Date('2024-01-01');
-    const programParticipationDays = Math.max(0, Math.floor((date.getTime() - Math.max(programStartDate.getTime(), positionCreatedAt.getTime())) / (1000 * 60 * 60 * 24)));
-    const timeMultiplier = Math.min(1 + ((programParticipationDays / config.programDurationDays) * config.timeBoostCoefficient), 1 + config.timeBoostCoefficient);
+    // Calculate time multiplier
+    const timeMultiplier = 1 + ((daysStaked / config.programDurationDays) * config.timeBoostCoefficient);
 
     // Calculate liquidity ratio
     const positionValueUSD = parseFloat(position.currentValueUSD || '0');
@@ -147,11 +115,13 @@ export class DailyRewardAccrualService {
       .where(eq(hourlyRewards.positionId, positionId))
       .orderBy(desc(hourlyRewards.executedAt));
 
-    // Calculate accumulated amount from hourly records with correct time multiplier
-    // This ensures we get the correct total even if the stored accumulatedAmount is wrong
-    const totalAccumulated = hourlyRecords.reduce((sum, record) => {
-      return sum + parseFloat(record.rewardAmount || '0');
-    }, 0);
+    const rewardRecord = await db
+      .select()
+      .from(rewards)
+      .where(eq(rewards.id, hourlyRecords[0].rewardId))
+      .limit(1);
+
+    const totalAccumulated = parseFloat(rewardRecord[0].accumulatedAmount);
 
     const hourlyBreakdown = hourlyRecords.map((record: any) => ({
       date: record.executedAt.toISOString().split('T')[0],
