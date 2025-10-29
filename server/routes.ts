@@ -41,6 +41,7 @@ import { SingleSourceAPR } from "./single-source-apr";
 // Removed realTimePriceService - using kiltPriceService instead
 import { uniswapIntegrationService } from "./uniswap-integration-service";
 import { PriceService } from "./price-service";
+import { kiltPriceService } from "./kilt-price-service";
 import { smartContractService } from "./smart-contract-service";
 import { appTransactionService } from "./app-transaction-service";
 import { positionRegistrationService } from "./position-registration-service";
@@ -2384,48 +2385,49 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
 
       // Use streamlined APR calculation for position breakdown
       try {
-        const streamlinedResponse = await fetch('http://localhost:5000/api/apr/streamlined');
-        if (streamlinedResponse.ok) {
-          const streamlinedData = await streamlinedResponse.json();
-          
-          const positionValue = Number(position.currentValueUSD) || 100; // Fallback value
-          const dailyIncentiveRewards = (positionValue * streamlinedData.programAPR / 100) / 365;
-          const dailyTradingFees = (positionValue * streamlinedData.tradingAPR / 100) / 365;
-          
-          res.json({
-            positionId: positionId,
-            nftTokenId: position.nftTokenId,
-            positionValue: positionValue,
-            apr: {
-              tradingFee: streamlinedData.tradingAPR,
-              incentive: streamlinedData.programAPR,
-              total: streamlinedData.totalAPR
-            },
-            breakdown: {
-              dailyFeeEarnings: dailyTradingFees,
-              dailyIncentiveRewards: dailyIncentiveRewards,
-              isInRange: true,
-              timeInRangeRatio: 1.0,
-              concentrationFactor: 1.0
-            },
-            dailyEarnings: {
-              tradingFees: dailyTradingFees,
-              incentives: dailyIncentiveRewards,
-              total: dailyTradingFees + dailyIncentiveRewards
-            },
-            position: {
-              minPrice: Number(position.minPrice),
-              maxPrice: Number(position.maxPrice),
-              isInRange: true,
-              timeInRangeRatio: 1.0,
-              concentrationFactor: 1.0,
-              daysActive: 1
-            }
-          });
-          return;
-        }
+        // Use internal analytics (no HTTP) to avoid env-specific failures
+        const analytics = await unifiedRewardService.getProgramAnalytics();
+        const positionValue = Number(position.currentValueUSD) || 100; // Fallback value
+        const programAPR = Number(analytics.programAPR || 0);
+        const tradingAPR = 4.5;
+        const totalAPR = programAPR + tradingAPR;
+
+        const dailyIncentiveRewards = (positionValue * programAPR / 100) / 365;
+        const dailyTradingFees = (positionValue * tradingAPR / 100) / 365;
+
+        res.json({
+          positionId: positionId,
+          nftTokenId: position.nftTokenId,
+          positionValue: positionValue,
+          apr: {
+            tradingFee: tradingAPR,
+            incentive: programAPR,
+            total: totalAPR
+          },
+          breakdown: {
+            dailyFeeEarnings: dailyTradingFees,
+            dailyIncentiveRewards: dailyIncentiveRewards,
+            isInRange: true,
+            timeInRangeRatio: 1.0,
+            concentrationFactor: 1.0
+          },
+          dailyEarnings: {
+            tradingFees: dailyTradingFees,
+            incentives: dailyIncentiveRewards,
+            total: dailyTradingFees + dailyIncentiveRewards
+          },
+          position: {
+            minPrice: Number(position.minPrice),
+            maxPrice: Number(position.maxPrice),
+            isInRange: true,
+            timeInRangeRatio: 1.0,
+            concentrationFactor: 1.0,
+            daysActive: 1
+          }
+        });
+        return;
       } catch (error) {
-        console.warn('Streamlined APR fetch failed for position breakdown');
+        console.warn('Program analytics failed for position breakdown');
       }
       
       // Fallback to realistic values
@@ -3294,16 +3296,12 @@ export async function registerRoutes(app: Express, security: any): Promise<Serve
       const dailyBudget = Number(settings?.dailyRewardsCap || 25000);
       const programDurationDays = settings?.programDurationDays || 60;
       
-      // Use real KILT price from our existing endpoint
+      // Use canonical price source (same as accrual): kiltPriceService
       let kiltPrice = 0.0167; // Fallback price
       try {
-        const kiltDataResponse = await fetch('http://localhost:5000/api/kilt-data');
-        if (kiltDataResponse.ok) {
-          const kiltData = await kiltDataResponse.json();
-          kiltPrice = kiltData.price || 0.0167;
-        }
+        kiltPrice = await kiltPriceService.getCurrentPrice();
       } catch (error) {
-        console.warn('Failed to fetch KILT price, using fallback:', error);
+        console.warn('Failed to get current KILT price, using fallback:', error);
       }
       
       // Get real pool TVL from DexScreener

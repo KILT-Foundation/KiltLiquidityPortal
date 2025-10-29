@@ -9,6 +9,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { smartContractService } from './smart-contract-service';
 import { registeredPoolAnalyticsService } from './registered-pool-analytics';
 import { dailyRewardAccrualService } from './daily-reward-accrual-service';
+import { kiltPriceService } from './kilt-price-service';
 
 interface CachedData {
   poolTVL: number; // Overall Uniswap pool TVL (for APR calculations)
@@ -511,15 +512,21 @@ export class UnifiedRewardService {
     poolFeeEarnings24h?: number;
     totalUniqueUsers?: number;
   }> {
-    // Get streamlined APR and real pool data
+    // Compute streamlined APR locally (no HTTP), aligned with accrual pricing
     let streamlinedData;
     try {
-      const streamlinedResponse = await fetch('http://localhost:5000/api/apr/streamlined');
-      if (streamlinedResponse.ok) {
-        streamlinedData = await streamlinedResponse.json();
-      } else {
-        throw new Error('Streamlined API failed');
-      }
+      const adminConfig = await this.getAdminConfiguration();
+      const kiltPrice = await kiltPriceService.getCurrentPrice();
+      const registeredPoolSize = await registeredPoolAnalyticsService.getInRangePoolSize();
+      const dailyBudgetUSD = adminConfig.dailyBudget * kiltPrice;
+      const annualBudgetUSD = dailyBudgetUSD * 365;
+      const programAPR = registeredPoolSize > 0 ? (annualBudgetUSD / registeredPoolSize) * 100 : 0;
+      streamlinedData = {
+        programAPR,
+        totalAPR: programAPR + 4.5,
+        poolTVL: await this.getPoolTVL(),
+        kiltPrice
+      } as any;
     } catch (error) {
       console.warn('Using fallback APR for program analytics');
       streamlinedData = { programAPR: 149.1, totalAPR: 153.6, poolTVL: 102250.23, kiltPrice: 0.016704 };
