@@ -14,11 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import "@/lib/complete-overlay-suppression";
 import "@/lib/error-suppression";
 import "@/lib/disable-runtime-overlay";
-import Footer from "@/components/Footer";
-import ImprintPage from "@/pages/imprint";
-import PrivacyPage from "@/pages/privacy";
-import TermsPage from "@/pages/terms";
-import DisclaimerPage from "@/pages/disclaimer";
 
 function Router() {
   return (
@@ -26,10 +21,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin/rewards" component={AdminRewards} />
-      <Route path="/imprint" component={ImprintPage} />
-      <Route path="/privacy" component={PrivacyPage} />
-      <Route path="/terms" component={TermsPage} />
-      <Route path="/disclaimer" component={DisclaimerPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -290,12 +281,7 @@ function App() {
             {/* CYBERPUNK VIDEO BACKGROUND */}
             <CyberpunkVideoBackground />
             <Toaster />
-            <div className="min-h-screen flex flex-col">
-              <div className="flex-1">
-                <Router />
-              </div>
-              <Footer />
-            </div>
+            <Router />
           </TooltipProvider>
         </WagmiWalletProvider>
       </QueryClientProvider>

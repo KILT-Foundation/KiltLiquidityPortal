@@ -441,7 +441,7 @@ export function MainDashboard() {
   // Show loading state while connecting
   if (isConnecting) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-white">Connecting wallet...</div>
       </div>
     );
@@ -449,7 +449,7 @@ export function MainDashboard() {
 
   if (!isConnected) {
     return (
-      <div className="p-6 overflow-hidden">
+      <div className="min-h-screen p-6 relative overflow-hidden">
         {/* Background Video */}
         <div className="absolute inset-0" style={{ zIndex: 1 }}>
           <video 
@@ -607,8 +607,8 @@ export function MainDashboard() {
   }
 
   return (
-    <div className="text-white overflow-x-hidden pb-6">
-      {/* Background Video */}
+    <div className="min-h-screen text-white overflow-x-hidden relative">
+      {/* Background Video - Testing higher z-index */}
       <video 
         autoPlay 
         muted 
@@ -624,6 +624,8 @@ export function MainDashboard() {
         <source src={backgroundVideo} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
+      {/* Transparent overlay for content readability */}
+      <div className="absolute inset-0 bg-black/30" style={{ zIndex: 2 }}></div>
       <div className="max-w-7xl mx-auto px-4 relative" style={{ zIndex: 10 }}>
         {/* Clean Professional Header */}
         <div className="w-full mb-8 py-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -812,9 +814,6 @@ export function MainDashboard() {
                   <div className="text-white text-base font-bold mb-1 numeric-large">
                     <TradingFeesAPR />
                   </div>
-                  <div className="text-white/50 text-xs font-medium">
-                    &nbsp;
-                  </div>
                 </div>
               </div>
 
@@ -830,9 +829,6 @@ export function MainDashboard() {
                   </div>
                   <div className="text-white text-base font-bold mb-1 numeric-large">
                     <PoolWideProgramAPR />
-                  </div>
-                  <div className="text-white/50 text-xs font-medium">
-                    &nbsp;
                   </div>
                 </div>
               </div>
