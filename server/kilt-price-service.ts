@@ -11,7 +11,7 @@ class KiltPriceService {
   private fetchInterval: NodeJS.Timeout | null = null;
   private readonly UPDATE_INTERVAL = 10000; // 10 seconds for real-time updates
   private readonly INITIAL_FALLBACK_PRICE = 0.01757; // Updated price from CoinGecko
-  private readonly MAX_PRICE_CHANGE_THRESHOLD = 0.5; // 50% max change per update (circuit breaker)
+  private readonly MIN_PRICE_THRESHOLD = 0.0001; // Minimum price to consider valid (prevents zero/negative prices)
 
   private constructor() {
     this.loadPersistedPrice();
@@ -97,19 +97,10 @@ class KiltPriceService {
         }
       }
       
-      if (newPrice > 0) {
-        // Circuit breaker: Detect unrealistic price changes
-        if (this.lastSuccessfulPrice > 0) {
-          const priceChange = Math.abs(newPrice - this.lastSuccessfulPrice) / this.lastSuccessfulPrice;
-          
-          if (priceChange > this.MAX_PRICE_CHANGE_THRESHOLD) {
-            // Price change too large, using last successful price
-            this.currentPrice = this.lastSuccessfulPrice;
-            return;
-          }
-        }
-        
-        // Valid price update
+      if (newPrice > this.MIN_PRICE_THRESHOLD) {
+        // Accept any valid price from trusted APIs
+        const changePercent = this.lastSuccessfulPrice > 0 ? ((newPrice - this.lastSuccessfulPrice) / this.lastSuccessfulPrice * 100).toFixed(2) : '0.00';
+        console.log(`✅ KILT price updated: ${this.lastSuccessfulPrice} → ${newPrice} (${changePercent}%)`);
         this.currentPrice = newPrice;
         this.lastUpdate = Date.now();
         await this.persistPrice(newPrice);
