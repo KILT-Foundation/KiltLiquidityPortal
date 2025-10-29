@@ -18,6 +18,7 @@ import { registeredPoolAnalyticsService } from './registered-pool-analytics';
 import { uniswapIntegrationService } from './uniswap-integration-service';
 import { dailyRewardAccrualService } from './daily-reward-accrual-service';
 import { kiltPriceService } from './kilt-price-service';
+import { unifiedRewardService } from './unified-reward-service';
 
 function minutesBetween(a: Date, b: Date): number {
   return Math.max(0, Math.floor((a.getTime() - b.getTime()) / (1000 * 60)));
@@ -44,6 +45,21 @@ export class HourlyRewardAccrualService {
       const [treasury] = await db.select().from(treasuryConfig).limit(1);
       if (!programConfig || !treasury) {
         throw new Error('Program/treasury configuration not found');
+      }
+
+      // Hard stop: if program ended or treasury exhausted, skip snapshot
+      try {
+        const analytics = await unifiedRewardService.getProgramAnalytics();
+        const treasuryRemaining = Number(analytics?.treasuryRemaining || 0);
+        const daysRemaining = Number(analytics?.daysRemaining || 0);
+        if (treasuryRemaining <= 0 || daysRemaining <= 0) {
+          return {
+            success: true,
+            message: 'Program inactive (no treasury or duration ended) – snapshot skipped.',
+          };
+        }
+      } catch {
+        // If analytics fails, continue as normal
       }
 
       // Find last snapshot (today or earlier)

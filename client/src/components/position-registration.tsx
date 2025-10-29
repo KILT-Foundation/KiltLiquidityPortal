@@ -434,7 +434,7 @@ export function PositionRegistration() {
                   <CheckCircle className="h-6 w-6 text-[#ff0066] mx-auto mb-3" />
                   <h3 className="text-white font-semibold mb-3 text-lg">All Set!</h3>
                   <p className="text-white/60 text-sm max-w-xs mb-3">
-                    All your KILT position{totalPositions !== 1 ? 's are' : ' is'} already registered and earning rewards.
+                    All your KILT positions are already registered and earning rewards.
                   </p>
                   {registeredCount > 0 && (
                     <div className="text-xs text-[#ff0066] font-medium">
