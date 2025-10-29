@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Coins, AlertCircle } from 'lucide-react';
+import { DYNAMIC_TREASURY_POOL_ABI } from '@/lib/contracts';
+import { useWalletClient } from 'wagmi';
+import { parseUnits } from 'viem';
 
 interface ClaimRewardsButtonProps {
   userAddress: string;
@@ -17,6 +20,8 @@ export function ClaimRewardsButton({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const { data: walletClient } = useWalletClient();
+
   const handleClaim = async () => {
     if (!window.ethereum) {
       toast({
@@ -30,7 +35,7 @@ export function ClaimRewardsButton({
     setIsLoading(true);
     
     try {
-      // Step 1: Get secure signature from backend
+      // Step 1: Get secure signature and exact signed amount from backend
       const signatureResponse = await fetch('/api/security/generate-claim-signature', {
         method: 'POST',
         headers: {
@@ -53,36 +58,22 @@ export function ClaimRewardsButton({
         throw new Error(signatureData.error || 'Signature generation failed');
       }
 
-      const { signature } = signatureData;
+      const { signature, totalRewardBalance, nonce, contractAddress } = signatureData;
 
-      // Step 2: Request account access
+      // Step 2: Ensure chain and account
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      // Step 3: Enhanced contract interaction with nonce-based security
-      const contractAddress = "0xe5771357399D58aC79A5b1161e8C363bB178B22b";
-      
-      // Encode simplified claimRewards(totalRewardBalance, signature) function call
-      const amountWei = BigInt(Math.floor(claimableAmount * 1e18)).toString(16).padStart(64, '0');
-      const signatureFormatted = signature.slice(2); // Remove 0x prefix
-      
-      const claimData = '0x' + 
-        'b88d4fde' + // claimRewards(uint256,bytes) selector for simplified version
-        amountWei + 
-        '0000000000000000000000000000000000000000000000000000000000000040' + // offset for bytes
-        '0000000000000000000000000000000000000000000000000000000000000041' + // signature length (65 bytes)
-        signatureFormatted +
-        '00'; // padding
-      
-      const txParams = {
-        to: contractAddress,
-        from: userAddress,
-        data: claimData,
-        gas: '0x186A0', // 100,000 gas limit
-      };
 
-      const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [txParams],
+      // Step 3: Use ABI-driven write with exact signed amount and nonce
+      if (!walletClient) throw new Error('Wallet not available');
+
+      const amountWei = parseUnits((totalRewardBalance ?? claimableAmount).toString(), 18);
+
+      const txHash = await walletClient.writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: DYNAMIC_TREASURY_POOL_ABI as any,
+        functionName: 'claimRewards',
+        args: [userAddress as `0x${string}`, amountWei, BigInt(nonce), signature as `0x${string}`],
+
       });
       
       toast({

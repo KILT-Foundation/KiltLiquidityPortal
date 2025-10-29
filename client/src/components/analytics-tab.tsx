@@ -20,7 +20,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 interface PositionAnalytics {
   nftTokenId: string;
-  positionAge: number;
+  positionAgeDays: number;
+  programParticipationDays: number;
   timeBonus: number;
   maxTimeBonus: number;
   currentValueUSD: number;
@@ -71,19 +72,24 @@ export function AnalyticsTab() {
     const analytics = validatedPositions.map((position: any) => {
       const now = new Date();
       const createdAt = new Date(position.createdAt || position.registeredAt);
-      const positionAgeDays = Math.max(0, (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
       
       const P = treasuryConfig.programDurationDays || 365;
       const b_time = programSettings.timeBoostCoefficient || 0.6;
       
-      // Calculate time bonus: 1 + ((D_u/P) * b_time)
-      const timeBonus = 1 + ((positionAgeDays / P) * b_time);
+      const positionAgeDays = Math.max(0, (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const programStartDate = treasuryConfig.programStartDate ? new Date(treasuryConfig.programStartDate) : new Date('2024-01-01');
+      const participationStartMs = Math.max(programStartDate.getTime(), createdAt.getTime());
+      const programParticipationDays = Math.max(0, (now.getTime() - participationStartMs) / (1000 * 60 * 60 * 24));
+      
+      // Calculate time bonus from participation days, capped at 1 + b_time
       const maxTimeBonus = 1 + b_time;
+      const timeBonus = Math.min(1 + ((programParticipationDays / P) * b_time), maxTimeBonus);
       
       return {
         nftTokenId: position.nftTokenId || position.tokenId || position.id?.toString(),
-        positionAge: positionAgeDays,
-        timeBonus: Math.min(timeBonus, maxTimeBonus),
+        positionAgeDays,
+        programParticipationDays,
+        timeBonus,
         maxTimeBonus,
         currentValueUSD: parseFloat(position.currentValueUSD || '0'),
         createdAt,
@@ -248,9 +254,9 @@ export function AnalyticsTab() {
 
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
-                      <div className="text-white/70 text-sm">Position Age</div>
+                      <div className="text-white/70 text-sm">Age/Participation</div>
                       <div className="text-white font-semibold">
-                        {Math.floor(position.positionAge)} days
+                        {Math.floor(position.positionAgeDays)}days/{Math.floor(position.programParticipationDays)}days
                       </div>
                     </div>
                     
