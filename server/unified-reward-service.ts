@@ -397,22 +397,31 @@ export class UnifiedRewardService {
       const walletAddress = userResult[0].address;
       const activePositions = positions.filter((pos: any) => pos.isActive === true);
 
-      // Get claimed amount from database and position calculations in parallel
-      const [claimedAmount, positionRewards] = await Promise.all([
+      // For totals, include ALL positions (active + closed). For current daily rate, only active.
+      const allPositions = positions;
+
+      // Get claimed amount, active position rewards (for live daily rate), and total accumulated across ALL positions from DB
+      const [claimedAmount, activePositionRewards, totalAccumRow] = await Promise.all([
         Promise.resolve(this.getClaimedAmountFromDatabase(walletAddress)),
         Promise.all(activePositions.map((position: any) => 
           this.getPositionRewardFromStoredData(position)
-        ))
+        )),
+        // Sum accumulated across all reward records for this user (historical-safe)
+        db.select({ totalAccumulated: sql<number>`COALESCE(SUM(${rewards.accumulatedAmount}::numeric), 0)` })
+          .from(rewards)
+          .where(eq(rewards.userId, userId))
+          .limit(1)
+          .then(rows => rows[0] || { totalAccumulated: 0 })
       ]);
 
       console.log(`💰 Claimed amount for ${walletAddress}: ${claimedAmount} KILT (from database)`);
-      console.log(`📊 Position rewards calculated: ${positionRewards.length} positions`);
-      positionRewards.forEach((reward: any, idx: number) => {
+      console.log(`📊 Position rewards calculated: ${activePositionRewards.length} positions`);
+      activePositionRewards.forEach((reward: any, idx: number) => {
         console.log(`  Position ${idx + 1}: ${reward.nftTokenId} - Daily: ${reward.dailyRewards.toFixed(2)}, Accumulated: ${reward.accumulatedRewards.toFixed(2)}`);
       });
 
       // Aggregate results efficiently
-      const totals = positionRewards.reduce(
+      const totals = activePositionRewards.reduce(
         (acc: any, reward: any) => ({
           dailyRewards: acc.dailyRewards + reward.dailyRewards,
           accumulated: acc.accumulated + reward.accumulatedRewards
@@ -424,7 +433,8 @@ export class UnifiedRewardService {
       // Total Accumulated = All rewards ever earned (both claimed + unclaimed)
       // Total Claimable = Only unclaimed rewards available to claim now
       
-      const totalAccumulated = Math.max(0, totals.accumulated);
+      // Prefer database-wide accumulated sum across all positions to avoid dropping totals when liquidity is removed
+      const totalAccumulated = Math.max(0, Number(totalAccumRow.totalAccumulated) || 0);
       const actualClaimableAmount = Math.max(0, totalAccumulated - claimedAmount);
       
       return {
@@ -433,7 +443,7 @@ export class UnifiedRewardService {
         totalClaimed: claimedAmount || 0,
         activePositions: activePositions.length,
         avgDailyRewards: totals.dailyRewards,
-        positions: positionRewards
+        positions: activePositionRewards
       };
 
     } catch (error) {
